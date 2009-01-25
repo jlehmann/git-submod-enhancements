@@ -6,6 +6,7 @@
 #include "parse-options.h"
 #include "unpack-trees.h"
 #include "dir.h"
+#include "refs.h"
 
 static char const * const archive_usage[] = {
 	N_("git archive [<options>] <tree-ish> [<path>...]"),
@@ -99,6 +100,70 @@ static void setup_archive_check(struct git_attr_check *check)
 	check[1].attr = attr_export_subst;
 }
 
+static int include_repository(const char *path)
+{
+	struct stat st;
+	const char *tmp;
+
+	/* Return early if the path does not exist since it is OK to not
+	 * checkout submodules.
+	 */
+	if (stat(path, &st) && errno == ENOENT)
+		return 1;
+
+	tmp = read_gitfile(path);
+	if (tmp) {
+		path = tmp;
+		if (stat(path, &st))
+			die("Unable to stat submodule gitdir %s: %s (%d)",
+			    path, strerror(errno), errno);
+	}
+
+	if (!S_ISDIR(st.st_mode))
+		die("Submodule gitdir %s is not a directory", path);
+
+	if (add_alt_odb(mkpath("%s/objects", path)))
+		die("submodule odb %s could not be added as an alternate",
+		    path);
+
+	return 0;
+}
+
+static int check_gitlink(struct archiver_args *args, const unsigned char *sha1,
+			 const char *path)
+{
+	switch (args->submodules) {
+	case 0:
+		return 0;
+
+	case SUBMODULES_ALL:
+		/* When all submodules are requested, we try to add any
+		 * checked out submodules as alternate odbs. But we don't
+		 * really care whether any particular submodule is checked
+		 * out or not, we are going to try to traverse it anyways.
+		 */
+		include_repository(mkpath("%s.git", path));
+		return READ_TREE_RECURSIVE;
+
+	case SUBMODULES_CHECKEDOUT:
+		/* If a repo is checked out at the gitlink path, we want to
+		 * traverse into the submodule. But we ignore the current
+		 * HEAD of the checked out submodule and always uses the SHA1
+		 * recorded in the gitlink entry since we want the content
+		 * of the archive to match the content of the <tree-ish>
+		 * specified on the command line.
+		 */
+		if (!include_repository(mkpath("%s.git", path)))
+			return READ_TREE_RECURSIVE;
+		else
+			return 0;
+
+	default:
+		die("archive.c: invalid value for args->submodules: %d",
+		    args->submodules);
+	}
+}
+
 struct directory {
 	struct directory *up;
 	unsigned char sha1[20];
@@ -149,7 +214,8 @@ static int write_archive_entry(const unsigned char *sha1, const char *base,
 		err = write_entry(args, sha1, path.buf, path.len, mode);
 		if (err)
 			return err;
-		return (S_ISDIR(mode) ? READ_TREE_RECURSIVE : 0);
+		return (S_ISDIR(mode) ? READ_TREE_RECURSIVE :
+			check_gitlink(args, sha1, path.buf));
 	}
 
 	if (args->verbose)
@@ -417,6 +483,7 @@ static int parse_archive_args(int argc, const char **argv,
 	const char *remote = NULL;
 	const char *exec = NULL;
 	const char *output = NULL;
+	const char *submodules = NULL;
 	int compression_level = -1;
 	int verbose = 0;
 	int i;
@@ -432,6 +499,9 @@ static int parse_archive_args(int argc, const char **argv,
 		OPT_BOOL(0, "worktree-attributes", &worktree_attributes,
 			N_("read .gitattributes in working directory")),
 		OPT__VERBOSE(&verbose, N_("report archived files on stderr")),
+		{OPTION_STRING, 0, "recurse-submodules", &submodules, "kind",
+			"include submodule content in the archive",
+			PARSE_OPT_OPTARG, NULL, (intptr_t)"checkedout"},
 		OPT__COMPR('0', &compression_level, N_("store only"), 0),
 		OPT__COMPR('1', &compression_level, N_("compress faster"), 1),
 		OPT__COMPR_HIDDEN('2', &compression_level, 2),
@@ -493,6 +563,15 @@ static int parse_archive_args(int argc, const char **argv,
 					format, compression_level);
 		}
 	}
+
+	if (!submodules)
+		args->submodules = 0;
+	else if (!strcmp(submodules, "checkedout"))
+		args->submodules = SUBMODULES_CHECKEDOUT;
+	else if (!strcmp(submodules, "all"))
+		args->submodules = SUBMODULES_ALL;
+	else
+		die("Invalid submodule kind: %s", submodules);
 	args->verbose = verbose;
 	args->base = base;
 	args->baselen = strlen(base);

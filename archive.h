@@ -15,7 +15,11 @@ struct archiver_args {
 	unsigned int worktree_attributes : 1;
 	unsigned int convert : 1;
 	int compression_level;
+	int submodules;
 };
+
+#define SUBMODULES_CHECKEDOUT 1
+#define SUBMODULES_ALL 2
 
 #define ARCHIVER_WANT_COMPRESSION_LEVELS 1
 #define ARCHIVER_REMOTE 2

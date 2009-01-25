@@ -302,8 +302,7 @@ static int link_alt_odb_entry(const char *entry, const char *relative_base,
 
 	/* Detect cases where alternate disappeared */
 	if (!is_directory(ent->base)) {
-		error("object directory %s does not exist; "
-		      "check .git/objects/info/alternates.",
+		error("Alternate object directory %s does not exist",
 		      ent->base);
 		free(ent);
 		return -1;
@@ -3464,4 +3463,20 @@ int for_each_packed_object(each_packed_object_fn cb, void *data)
 			break;
 	}
 	return r;
+}
+
+int add_alt_odb(const char *path)
+{
+	int err;
+	struct strbuf objdirbuf = STRBUF_INIT;
+
+	strbuf_add_absolute_path(&objdirbuf, get_object_directory());
+	normalize_path_copy(objdirbuf.buf, objdirbuf.buf);
+
+	err = link_alt_odb_entry(path, NULL, 0, objdirbuf.buf);
+	if (!err)
+		prepare_packed_git_one((char *)path, 0);
+
+	strbuf_release(&objdirbuf);
+	return err;
 }
