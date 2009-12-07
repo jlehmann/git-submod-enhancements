@@ -94,7 +94,8 @@ If you intend that your next commit should record all modifications
 of tracked files in the working tree and record all removals of
 files that have been removed from the working tree with `rm`
 (as opposed to `git rm`), use `git commit -a`, as it will
-automatically notice and record all removals.
+automatically notice and record all removals.  You can also have a
+similar effect without committing by using `git add -u`.
 
 Using "git add -A"
 ~~~~~~~~~~~~~~~~~~
