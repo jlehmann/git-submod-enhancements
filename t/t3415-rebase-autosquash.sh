@@ -55,4 +55,19 @@ test_expect_success 'auto squash' '
 	test 2 = $(git cat-file commit HEAD^ | grep first | wc -l)
 '
 
+test_expect_success 'misspelled auto squash' '
+	git reset --hard base &&
+	echo 1 >file1 &&
+	git add -u &&
+	test_tick &&
+	git commit -m "squash! forst"
+	git tag final-missquash &&
+	test_tick &&
+	git rebase --autosquash -i HEAD^^^ &&
+	git log --oneline >actual &&
+	test 4 = $(wc -l <actual) &&
+	git diff --exit-code final-missquash &&
+	test 0 = $(git rev-list final-missquash...HEAD | wc -l)
+'
+
 test_done

@@ -531,29 +531,23 @@ rearrange_squash () {
 		"$1" >"$1.sq"
 	test -s "$1.sq" || return
 
-	sed -e '/^pick [0-9a-f]* squash! /d' \
-		-e '/^pick [0-9a-f]* fixup! /d' \
-		"$1" |
-	(
-		used=
-		while read pick sha1 message
+	used=
+	while read pick sha1 message
+	do
+		case " $used" in
+		*" $sha1 "*) continue ;;
+		esac
+		echo "$pick $sha1 $message"
+		while read squash action msg
 		do
-			echo "$pick $sha1 $message"
-			while read squash action msg
-			do
-				case " $used" in
-				*" $squash "*)
-					continue ;;
-				esac
-				case "$message" in
-				"$msg"*)
-					echo "$action $squash $action! $msg"
-					used="$used$squash "
-					;;
-				esac
-			done <"$1.sq"
-		done >"$1.rearranged"
-	)
+			case "$message" in
+			"$msg"*)
+				echo "$action $squash $action! $msg"
+				used="$used$squash "
+				;;
+			esac
+		done <"$1.sq"
+	done >"$1.rearranged" <"$1"
 	cat "$1.rearranged" >"$1"
 	rm -f "$1.sq" "$1.rearranged"
 }
