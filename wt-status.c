@@ -466,15 +466,17 @@ static void wt_status_print_submodule_summary(struct wt_status *s)
 	char index[PATH_MAX];
 	const char *env[] = { index, NULL };
 	const char *argv[] = {
-		"submodule",
-		"summary",
+		"diff-index",
+		"--submodule",
+		"-p",
 		"--cached",
-		"--for-status",
-		"--summary-limit",
-		summary_limit,
 		s->amend ? "HEAD^" : "HEAD",
 		NULL
 	};
+	const char *c = color(WT_STATUS_HEADER, s);
+
+	color_fprintf_ln(s->fp, c, "# Submodule changes to be committed:");
+	color_fprintf_ln(s->fp, c, "#");
 
 	sprintf(summary_limit, "%d", s->submodule_summary);
 	snprintf(index, sizeof(index), "GIT_INDEX_FILE=%s", s->index_file);
@@ -487,6 +489,40 @@ static void wt_status_print_submodule_summary(struct wt_status *s)
 	fflush(s->fp);
 	sm_summary.out = dup(fileno(s->fp));    /* run_command closes it */
 	run_command(&sm_summary);
+
+	color_fprintf_ln(s->fp, c, "#");
+}
+
+static void wt_status_print_submodule_uncommitted(struct wt_status *s)
+{
+	struct child_process sm_summary;
+	char summary_limit[64];
+	char index[PATH_MAX];
+	const char *env[] = { index, NULL };
+	const char *argv[] = {
+		"diff-files",
+		"--submodule",
+		"-p",
+		NULL
+	};
+	const char *c = color(WT_STATUS_HEADER, s);
+
+	color_fprintf_ln(s->fp, c, "# Untracked submodule changes:");
+	color_fprintf_ln(s->fp, c, "#");
+
+	sprintf(summary_limit, "%d", s->submodule_summary);
+	snprintf(index, sizeof(index), "GIT_INDEX_FILE=%s", s->index_file);
+
+	memset(&sm_summary, 0, sizeof(sm_summary));
+	sm_summary.argv = argv;
+	sm_summary.env = env;
+	sm_summary.git_cmd = 1;
+	sm_summary.no_stdin = 1;
+	fflush(s->fp);
+	sm_summary.out = dup(fileno(s->fp));    /* run_command closes it */
+	run_command(&sm_summary);
+
+	color_fprintf_ln(s->fp, c, "#");
 }
 
 static void wt_status_print_untracked(struct wt_status *s)
@@ -582,6 +618,7 @@ void wt_status_print(struct wt_status *s)
 	wt_status_print_changed(s);
 	if (s->submodule_summary)
 		wt_status_print_submodule_summary(s);
+	wt_status_print_submodule_uncommitted(s);
 	if (s->show_untracked_files)
 		wt_status_print_untracked(s);
 	else if (s->commitable)
