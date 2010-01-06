@@ -19,6 +19,7 @@ remove_config_vars()
 {
 	# Unset all config variables used by git-difftool
 	git config --unset diff.tool
+	git config --unset diff.guitool
 	git config --unset difftool.test-tool.cmd
 	git config --unset difftool.prompt
 	git config --unset merge.tool
@@ -36,6 +37,7 @@ restore_test_defaults()
 	unset GIT_DIFFTOOL_NO_PROMPT
 	git config diff.tool test-tool &&
 	git config difftool.test-tool.cmd 'cat $LOCAL'
+	git config difftool.bogus-tool.cmd false
 }
 
 prompt_given()
@@ -71,9 +73,20 @@ test_expect_success 'custom commands' '
 
 # Ensures that git-difftool ignores bogus --tool values
 test_expect_success 'difftool ignores bad --tool values' '
-	diff=$(git difftool --no-prompt --tool=bogus-tool branch)
+	diff=$(git difftool --no-prompt --tool=bad-tool branch)
 	test "$?" = 1 &&
 	test "$diff" = ""
+'
+
+test_expect_success 'difftool honors --gui' '
+	git config merge.tool bogus-tool &&
+	git config diff.tool bogus-tool &&
+	git config diff.guitool test-tool &&
+
+	diff=$(git difftool --no-prompt --gui branch) &&
+	test "$diff" = "branch" &&
+
+	restore_test_defaults
 '
 
 # Specify the diff tool using $GIT_DIFF_TOOL
