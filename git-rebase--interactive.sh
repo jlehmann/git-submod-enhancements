@@ -552,6 +552,25 @@ rearrange_squash () {
 	rm -f "$1.sq" "$1.rearranged"
 }
 
+LF='
+'
+parse_onto () {
+	case "$1" in
+	*...*)
+		if	left=${1%...*} right=${1#*...} &&
+			onto=$(git merge-base --all ${left:-HEAD} ${right:-HEAD})
+		then
+			case "$onto" in
+			?*"$LF"?* | '')
+				exit 1 ;;
+			esac
+			echo "$onto"
+			exit 0
+		fi
+	esac
+	git rev-parse --verify "$1^0"
+}
+
 while test $# != 0
 do
 	case "$1" in
@@ -662,7 +681,7 @@ first and then run 'git rebase --continue' again."
 		;;
 	--onto)
 		shift
-		ONTO=$(git rev-parse --verify "$1") ||
+		ONTO=$(parse_onto "$1") ||
 			die "Does not point to a valid commit: $1"
 		;;
 	--)
