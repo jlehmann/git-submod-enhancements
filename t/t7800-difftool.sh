@@ -32,7 +32,6 @@ restore_test_defaults()
 	# Restores the test defaults used by several tests
 	remove_config_vars
 	unset GIT_DIFF_TOOL
-	unset GIT_MERGE_TOOL
 	unset GIT_DIFFTOOL_PROMPT
 	unset GIT_DIFFTOOL_NO_PROMPT
 	git config diff.tool test-tool &&
@@ -107,15 +106,7 @@ test_expect_success 'GIT_DIFF_TOOL overrides' '
 	git config diff.tool bogus-tool &&
 	git config merge.tool bogus-tool &&
 
-	GIT_MERGE_TOOL=test-tool &&
-	export GIT_MERGE_TOOL &&
-	diff=$(git difftool --no-prompt branch) &&
-	test "$diff" = "branch" &&
-	unset GIT_MERGE_TOOL &&
-
-	GIT_MERGE_TOOL=bogus-tool &&
 	GIT_DIFF_TOOL=test-tool &&
-	export GIT_MERGE_TOOL &&
 	export GIT_DIFF_TOOL &&
 
 	diff=$(git difftool --no-prompt branch) &&
@@ -223,7 +214,24 @@ test_expect_success 'difftool.<tool>.path' '
 	diff=$(git difftool --tool=tkdiff --no-prompt branch) &&
 	git config --unset difftool.tkdiff.path &&
 	lines=$(echo "$diff" | grep file | wc -l) &&
-	test "$lines" -eq 1
+	test "$lines" -eq 1 &&
+
+	restore_test_defaults
+'
+
+test_expect_success 'difftool --extcmd=...' '
+	diff=$(git difftool --no-prompt --extcmd=cat branch) &&
+
+	lines=$(echo "$diff" | wc -l) &&
+	test "$lines" -eq 2 &&
+
+	lines=$(echo "$diff" | grep master | wc -l) &&
+	test "$lines" -eq 1 &&
+
+	lines=$(echo "$diff" | grep branch | wc -l) &&
+	test "$lines" -eq 1 &&
+
+	restore_test_defaults
 '
 
 test_done
