@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2009 David Aguilar
+# Copyright (c) 2009, 2010 David Aguilar
 #
 
 test_description='git-difftool
@@ -14,6 +14,9 @@ if ! test_have_prereq PERL; then
 	say 'skipping difftool tests, perl not available'
 	test_done
 fi
+
+LF='
+'
 
 remove_config_vars()
 {
@@ -219,19 +222,34 @@ test_expect_success 'difftool.<tool>.path' '
 	restore_test_defaults
 '
 
-test_expect_success 'difftool --extcmd=...' '
+test_expect_success 'difftool --extcmd=cat' '
 	diff=$(git difftool --no-prompt --extcmd=cat branch) &&
+	test "$diff" = branch"$LF"master
+'
 
-	lines=$(echo "$diff" | wc -l) &&
-	test "$lines" -eq 2 &&
+test_expect_success 'difftool --extcmd cat' '
+	diff=$(git difftool --no-prompt --extcmd cat branch) &&
+	test "$diff" = branch"$LF"master
+'
 
-	lines=$(echo "$diff" | grep master | wc -l) &&
-	test "$lines" -eq 1 &&
+test_expect_success 'difftool -x cat' '
+	diff=$(git difftool --no-prompt -x cat branch) &&
+	test "$diff" = branch"$LF"master
+'
 
-	lines=$(echo "$diff" | grep branch | wc -l) &&
-	test "$lines" -eq 1 &&
+test_expect_success 'difftool --extcmd echo arg1' '
+	diff=$(git difftool --no-prompt --extcmd sh\ -c\ \"echo\ \$1\" branch)
+	test "$diff" = file
+'
 
-	restore_test_defaults
+test_expect_success 'difftool --extcmd cat arg1' '
+	diff=$(git difftool --no-prompt --extcmd sh\ -c\ \"cat\ \$1\" branch)
+	test "$diff" = master
+'
+
+test_expect_success 'difftool --extcmd cat arg2' '
+	diff=$(git difftool --no-prompt --extcmd sh\ -c\ \"cat\ \$2\" branch)
+	test "$diff" = branch
 '
 
 test_done
