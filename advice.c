@@ -4,6 +4,7 @@ int advice_push_nonfastforward = 1;
 int advice_status_hints = 1;
 int advice_commit_before_merge = 1;
 int advice_resolve_conflict = 1;
+int advice_implicit_identity = 1;
 
 static struct {
 	const char *name;
@@ -13,6 +14,7 @@ static struct {
 	{ "statushints", &advice_status_hints },
 	{ "commitbeforemerge", &advice_commit_before_merge },
 	{ "resolveconflict", &advice_resolve_conflict },
+	{ "implicitidentity", &advice_implicit_identity },
 };
 
 int git_default_advice_config(const char *var, const char *value)
