@@ -2849,9 +2849,12 @@ int diff_opt_parse(struct diff_options *options, const char **av, int ac)
 		DIFF_OPT_SET(options, ALLOW_TEXTCONV);
 	else if (!strcmp(arg, "--no-textconv"))
 		DIFF_OPT_CLR(options, ALLOW_TEXTCONV);
-	else if (!strcmp(arg, "--ignore-submodules"))
-		DIFF_OPT_SET(options, IGNORE_SUBMODULES);
-	else if (!strcmp(arg, "--submodule"))
+	else if (!strncmp(arg, "--ignore-submodules", 19)) {
+		if (!strcmp(arg + 19, "=untracked"))
+			DIFF_OPT_SET(options, IGNORE_UNTRACKED_IN_SUBMODULES);
+		else
+			DIFF_OPT_SET(options, IGNORE_SUBMODULES);
+	} else if (!strcmp(arg, "--submodule"))
 		DIFF_OPT_SET(options, SUBMODULE_LOG);
 	else if (!prefixcmp(arg, "--submodule=")) {
 		if (!strcmp(arg + 12, "log"))
