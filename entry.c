@@ -201,7 +201,8 @@ int checkout_entry(struct cache_entry *ce, const struct checkout *state, char *t
 	if (topath)
 		return write_entry(ce, topath, state, 1);
 
-	memcpy(path, state->base_dir, len);
+	if (state->base_dir)
+		memcpy(path, state->base_dir, len);
 	strcpy(path + len, ce->name);
 	len += ce_namelen(ce);
 
