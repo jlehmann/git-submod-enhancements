@@ -254,6 +254,7 @@ int cmd_checkout_index(int argc, const char **argv, const char *prefix)
 	state.force = force;
 	state.quiet = quiet;
 	state.not_new = not_new;
+	state.ignore_submodules = 1;
 
 	if (state.base_dir_len || to_tempfile) {
 		/* when --prefix is specified we do not

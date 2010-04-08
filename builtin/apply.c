@@ -2830,6 +2830,7 @@ static int check_preimage(struct patch *patch, struct cache_entry **ce, struct s
 			costate.quiet = 0;
 			costate.not_new = 0;
 			costate.refresh_cache = 1;
+			costate.ignore_submodules = 1;
 			if (checkout_entry(*ce, &costate, NULL) ||
 			    lstat(old_name, st))
 				return -1;

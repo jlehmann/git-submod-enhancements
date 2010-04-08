@@ -206,3 +206,35 @@ unsigned is_submodule_modified(const char *path, int ignore_untracked)
 	strbuf_release(&buf);
 	return dirty_submodule;
 }
+
+int checkout_submodule(const char *path, const unsigned char sha1[20], int force)
+{
+	struct strbuf buf = STRBUF_INIT;
+	struct child_process cp;
+	const char *hex_sha1 = sha1_to_hex(sha1);
+	const char *argv[] = {
+		"checkout",
+                force ? "-qf" : "-q",
+		hex_sha1,
+		NULL,
+	};
+	
+	strbuf_addf(&buf, "%s/.git/", path);
+	if (!is_directory(buf.buf)) {
+		strbuf_release(&buf);
+		/* The submodule is not populated, so we can't check it out */
+		return 0;
+	}
+
+	memset(&cp, 0, sizeof(cp));
+	cp.argv = argv;
+	cp.env = local_repo_env;
+	cp.git_cmd = 1;
+	cp.no_stdin = 1;
+	cp.out = -1;
+	cp.dir = path;   /* GIT_WORK_TREE doesn't work for git checkout */
+	if (run_command(&cp))
+		return error("Could not checkout submodule %s", path);
+
+	return 0;
+}
