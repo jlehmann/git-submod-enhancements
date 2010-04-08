@@ -451,6 +451,7 @@ int run_diff_index(struct rev_info *revs, int cached)
 	opts.unpack_data = revs;
 	opts.src_index = &the_index;
 	opts.dst_index = NULL;
+	opts.ignore_submodules = 1;
 
 	init_tree_desc(&t, tree->buffer, tree->size);
 	if (unpack_trees(1, &t, &opts))
@@ -509,6 +510,7 @@ int do_diff_cache(const unsigned char *tree_sha1, struct diff_options *opt)
 	opts.unpack_data = &revs;
 	opts.src_index = &the_index;
 	opts.dst_index = &the_index;
+	opts.ignore_submodules = 1;
 
 	init_tree_desc(&t, tree->buffer, tree->size);
 	if (unpack_trees(1, &t, &opts))

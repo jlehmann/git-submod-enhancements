@@ -98,6 +98,7 @@ static int reset_index_file(const unsigned char *sha1, int reset_type, int quiet
 		nr++;
 		opts.fn = twoway_merge;
 	}
+	opts.ignore_submodules = 1;
 
 	if (!fill_tree_descriptor(desc + nr - 1, sha1))
 		return error("Failed to find tree of %s.", sha1_to_hex(sha1));

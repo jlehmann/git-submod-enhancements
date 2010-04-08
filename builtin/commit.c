@@ -251,6 +251,7 @@ static void create_base_index(void)
 	opts.dst_index = &the_index;
 
 	opts.fn = oneway_merge;
+	opts.ignore_submodules = 1;
 	tree = parse_tree_indirect(head_sha1);
 	if (!tree)
 		die("failed to unpack HEAD tree object");

@@ -637,6 +637,7 @@ int cmd_clone(int argc, const char **argv, const char *prefix)
 		opts.verbose_update = (option_verbosity > 0);
 		opts.src_index = &the_index;
 		opts.dst_index = &the_index;
+		opts.ignore_submodules = 1;
 
 		tree = parse_tree_indirect(our_head_points_at->old_sha1);
 		parse_tree(tree);
