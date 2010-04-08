@@ -183,7 +183,7 @@ save_stash () {
 
 	if test -z "$patch_mode"
 	then
-		git reset --hard ${GIT_QUIET:+-q}
+		git reset --ignore-submodules --hard ${GIT_QUIET:+-q}
 
 		if test -n "$keep_index" && test -n $i_tree
 		then
