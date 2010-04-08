@@ -33,6 +33,8 @@ static const char *reset_type_names[] = {
 	"mixed", "soft", "hard", "merge", "keep", NULL
 };
 
+static int ignore_submodules;
+
 static char *args_to_str(const char **argv)
 {
 	char *buf = NULL;
@@ -98,6 +100,7 @@ static int reset_index_file(const unsigned char *sha1, int reset_type, int quiet
 		nr++;
 		opts.fn = twoway_merge;
 	}
+	opts.ignore_submodules = ignore_submodules;
 
 	if (!fill_tree_descriptor(desc + nr - 1, sha1))
 		return error("Failed to find tree of %s.", sha1_to_hex(sha1));
@@ -254,6 +257,8 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 		OPT_SET_INT(0, "keep", &reset_type,
 				"reset HEAD but keep local changes", KEEP),
 		OPT_BOOLEAN('p', "patch", &patch_mode, "select hunks interactively"),
+		OPT_BOOLEAN(0, "ignore-submodules", &ignore_submodules,
+				"don't reset submodule content when resetting working tree"),
 		OPT_END()
 	};
 
@@ -307,6 +312,9 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 		die("Could not parse object '%s'.", rev);
 	hashcpy(sha1, commit->object.sha1);
 
+	if (ignore_submodules)
+		if (reset_type != HARD)
+			die("--ignore-submodules can only be used with --hard");
 	if (patch_mode) {
 		if (reset_type != NONE)
 			die("--patch is incompatible with --{hard,mixed,soft}");

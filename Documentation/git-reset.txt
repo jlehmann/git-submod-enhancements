@@ -73,6 +73,10 @@ linkgit:git-add[1]).
 --quiet::
 	Be quiet, only report errors.
 
+--ignore-submodules::
+	Don't update the working trees of submodules. This option is only
+	valid when used with the --hard option.
+
 <commit>::
 	Commit to make the current HEAD. If not given defaults to HEAD.
 

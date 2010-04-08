@@ -129,7 +129,9 @@ test_expect_success 'git diff HEAD with dirty submodule (untracked, refs match)'
 	git diff HEAD >actual &&
 	sed -e "1,/^@@/d" actual >actual.body &&
 	expect_from_to >expect.body $subprev $subprev-dirty &&
-	test_cmp expect.body actual.body
+	test_cmp expect.body actual.body &&
+	git diff --ignore-submodules=untracked HEAD >actual2 &&
+	echo -n "" | test_cmp - actual2
 '
 
 test_expect_success 'git diff (empty submodule dir)' '

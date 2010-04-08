@@ -201,6 +201,7 @@ int cmd_read_tree(int argc, const char **argv, const char *unused_prefix)
 
 	if (opts.debug_unpack)
 		opts.fn = debug_merge;
+	opts.ignore_submodules = 1;
 
 	cache_tree_free(&active_cache_tree);
 	for (i = 0; i < nr_trees; i++) {

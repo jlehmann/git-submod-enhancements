@@ -33,7 +33,8 @@ struct unpack_trees_options {
 		     diff_index_cached,
 		     debug_unpack,
 		     skip_sparse_checkout,
-		     gently;
+		     gently,
+		     ignore_submodules;
 	const char *prefix;
 	int cache_bottom;
 	struct dir_struct *dir;

@@ -11,7 +11,7 @@ SYNOPSIS
 [verse]
 'git checkout-index' [-u] [-q] [-a] [-f] [-n] [--prefix=<string>]
 		   [--stage=<number>|all]
-		   [--temp]
+		   [--temp] [--ignore-submodules]
 		   [-z] [--stdin]
 		   [--] [<file>]\*
 
@@ -67,6 +67,13 @@ OPTIONS
 -z::
 	Only meaningful with `--stdin`; paths are separated with
 	NUL character instead of LF.
+
+--ignore-submodules::
+	Since version 1.8.0 the default behavior is to checkout populated
+	submodules recursively. When this option is used, the work trees of
+	submodules will not be updated, only the hash recorded in the
+	superproject will be changed (this was the default behavior until
+	1.8.0).
 
 \--::
 	Do not interpret any more arguments as options.

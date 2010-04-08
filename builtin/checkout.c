@@ -31,6 +31,7 @@ struct checkout_opts {
 	int force;
 	int writeout_stage;
 	int writeout_error;
+	int ignore_submodules;
 
 	const char *new_branch;
 	const char *new_orphan_branch;
@@ -248,6 +249,7 @@ static int checkout_paths(struct tree *source_tree, const char **pathspec,
 	memset(&state, 0, sizeof(state));
 	state.force = 1;
 	state.refresh_cache = 1;
+	state.ignore_submodules = opts->ignore_submodules;
 	for (pos = 0; pos < active_nr; pos++) {
 		struct cache_entry *ce = active_cache[pos];
 		if (match_pathspec(pathspec, ce->name, ce_namelen(ce), 0, NULL)) {
@@ -313,6 +315,7 @@ static int reset_tree(struct tree *tree, struct checkout_opts *o, int worktree)
 	opts.verbose_update = !o->quiet;
 	opts.src_index = &the_index;
 	opts.dst_index = &the_index;
+	opts.ignore_submodules = o->ignore_submodules;
 	parse_tree(tree);
 	init_tree_desc(&tree_desc, tree->buffer, tree->size);
 	switch (unpack_trees(1, &tree_desc, &opts)) {
@@ -392,6 +395,7 @@ static int merge_working_tree(struct checkout_opts *opts,
 		topts.dir = xcalloc(1, sizeof(*topts.dir));
 		topts.dir->flags |= DIR_SHOW_IGNORED;
 		topts.dir->exclude_per_dir = ".gitignore";
+		topts.ignore_submodules = opts->ignore_submodules;
 		tree = parse_tree_indirect(old->commit ?
 					   old->commit->object.sha1 :
 					   (unsigned char *)EMPTY_TREE_SHA1_BIN);
@@ -648,6 +652,8 @@ int cmd_checkout(int argc, const char **argv, const char *prefix)
 		{ OPTION_BOOLEAN, 0, "guess", &dwim_new_local_branch, NULL,
 		  "second guess 'git checkout no-such-branch'",
 		  PARSE_OPT_NOARG | PARSE_OPT_HIDDEN },
+		OPT_BOOLEAN(0, "ignore-submodules", &opts.ignore_submodules,
+			    "don't update submodule work trees"),
 		OPT_END(),
 	};
 	int has_dash_dash;

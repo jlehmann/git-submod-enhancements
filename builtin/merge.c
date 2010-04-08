@@ -532,6 +532,7 @@ static int read_tree_trivial(unsigned char *common, unsigned char *head,
 	if (!trees[nr_trees++])
 		return -1;
 	opts.fn = threeway_merge;
+	opts.ignore_submodules = 1;
 	cache_tree_free(&active_cache_tree);
 	for (i = 0; i < nr_trees; i++) {
 		parse_tree(trees[i]);
@@ -696,6 +697,7 @@ int checkout_fast_forward(const unsigned char *head, const unsigned char *remote
 	opts.merge = 1;
 	opts.fn = twoway_merge;
 	opts.msgs = get_porcelain_error_msgs();
+	opts.ignore_submodules = 1;
 
 	trees[nr_trees] = parse_tree_indirect(head);
 	if (!trees[nr_trees++])

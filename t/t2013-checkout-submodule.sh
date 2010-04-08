@@ -29,12 +29,22 @@ test_expect_success '"reset <submodule>" updates the index' '
 	git diff-files --quiet
 '
 
-test_expect_success '"checkout <submodule>" updates the index only' '
+test_expect_success '"checkout --ignore-submodules <submodule>" updates the index only' '
+	git update-index --refresh &&
+	git diff-files --quiet &&
+	git diff-index --quiet --cached HEAD &&
+	git checkout --ignore-submodules HEAD^ submodule &&
+	test_must_fail git diff-files --quiet &&
+	git checkout HEAD submodule &&
+	git diff-files --quiet
+'
+
+test_expect_success '"checkout <submodule>" updates recursively' '
 	git update-index --refresh &&
 	git diff-files --quiet &&
 	git diff-index --quiet --cached HEAD &&
 	git checkout HEAD^ submodule &&
-	test_must_fail git diff-files --quiet &&
+	git diff-files --quiet &&
 	git checkout HEAD submodule &&
 	git diff-files --quiet
 '

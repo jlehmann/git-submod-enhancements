@@ -288,8 +288,11 @@ endif::git-format-patch[]
 --no-ext-diff::
 	Disallow external diff drivers.
 
---ignore-submodules::
-	Ignore changes to submodules in the diff generation.
+--ignore-submodules[=<when>]::
+	Ignore changes to submodules in the diff generation. <when> can be
+	either "untracked" or "all", which is the default. When "untracked"
+	is used submodules are not considered dirty when they only contain
+	untracked content. Using "all" hides all changes to submodules.
 
 --src-prefix=<prefix>::
 	Show the given source prefix instead of "a/".
