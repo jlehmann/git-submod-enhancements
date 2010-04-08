@@ -144,6 +144,13 @@ the conflicted merge in the specified paths.
 This means that you can use `git checkout -p` to selectively discard
 edits from your current working tree.
 
+--ignore-submodules::
+	Since version 1.8.0 the default behavior is to checkout populated
+	submodules recursively. When this option is used, the work trees of
+	submodules will not be updated, only the hash recorded in the
+	superproject will be changed (this was the default behavior until
+	1.8.0).
+
 <branch>::
 	Branch to checkout; if it refers to a branch (i.e., a name that,
 	when prepended with "refs/heads/", is a valid ref), then that
