@@ -920,3 +920,39 @@ int merge_submodule(unsigned char result[20], const char *path,
 	free(merges.objects);
 	return 0;
 }
+
+int checkout_submodule(const char *path, const unsigned char sha1[20], int force)
+{
+	struct strbuf buf = STRBUF_INIT;
+	struct child_process cp;
+	const char *hex_sha1 = sha1_to_hex(sha1);
+	const char *argv[] = {
+		"checkout",
+		force ? "-f" : "-q",
+		hex_sha1,
+		NULL,
+	};
+	const char *git_dir;
+	
+	strbuf_addf(&buf, "%s/.git", path);
+	git_dir = read_gitfile(buf.buf);
+	if (!git_dir)
+		git_dir = buf.buf;
+	if (!is_directory(git_dir)) {
+		strbuf_release(&buf);
+		/* The submodule is not populated, so we can't check it out */
+		return 0;
+	}
+	strbuf_release(&buf);
+
+	memset(&cp, 0, sizeof(cp));
+	cp.argv = argv;
+	cp.env = local_repo_env;
+	cp.git_cmd = 1;
+	cp.no_stdin = 1;
+	cp.dir = path;   /* GIT_WORK_TREE doesn't work for git checkout */
+	if (run_command(&cp))
+		return error("Could not checkout submodule %s", path);
+
+	return 0;
+}

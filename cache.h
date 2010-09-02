@@ -919,7 +919,9 @@ struct checkout {
 	unsigned force:1,
 		 quiet:1,
 		 not_new:1,
-		 refresh_cache:1;
+		 refresh_cache:1,
+		 reset:1,
+		 recurse_submodules:1;
 };
 
 extern int checkout_entry(struct cache_entry *ce, const struct checkout *state, char *topath);

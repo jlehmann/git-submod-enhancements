@@ -2,6 +2,7 @@
 #include "blob.h"
 #include "dir.h"
 #include "streaming.h"
+#include "submodule.h"
 
 static void create_directories(const char *path, int path_len,
 			       const struct checkout *state)
@@ -261,9 +262,11 @@ int checkout_entry(struct cache_entry *ce, const struct checkout *state, char *t
 		 * just do the right thing)
 		 */
 		if (S_ISDIR(st.st_mode)) {
-			/* If it is a gitlink, leave it alone! */
-			if (S_ISGITLINK(ce->ce_mode))
-				return 0;
+			if (S_ISGITLINK(ce->ce_mode)) {
+				if (!state->recurse_submodules)
+					return 0;
+				return checkout_submodule(ce->name, ce->sha1, state->reset && state->force);
+			}
 			if (!state->force)
 				return error("%s is a directory", path);
 			remove_subtree(path);
