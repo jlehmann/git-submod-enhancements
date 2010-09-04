@@ -15,6 +15,7 @@ enum unpack_trees_error_types {
 	ERROR_WOULD_OVERWRITE = 0,
 	ERROR_NOT_UPTODATE_FILE,
 	ERROR_NOT_UPTODATE_DIR,
+	ERROR_NOT_UPTODATE_SUBMODULE,
 	ERROR_WOULD_LOSE_UNTRACKED_OVERWRITTEN,
 	ERROR_WOULD_LOSE_UNTRACKED_REMOVED,
 	ERROR_BIND_OVERLAP,
@@ -48,7 +49,8 @@ struct unpack_trees_options {
 		     gently,
 		     exiting_early,
 		     show_all_errors,
-		     dry_run;
+		     dry_run,
+		     recurse_submodules;
 	const char *prefix;
 	int cache_bottom;
 	struct dir_struct *dir;

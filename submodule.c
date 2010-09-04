@@ -756,6 +756,41 @@ unsigned is_submodule_modified(const char *path, int ignore_untracked)
 	return dirty_submodule;
 }
 
+unsigned is_submodule_checkout_safe(const char *path, unsigned char sha1[20])
+{
+	struct strbuf buf = STRBUF_INIT;
+	struct child_process cp;
+	const char *hex_sha1 = sha1_to_hex(sha1);
+	const char *argv[] = {
+		"read-tree",
+		"-n",
+		"-m",
+		"HEAD",
+		hex_sha1,
+		NULL,
+	};
+	const char *git_dir;
+	
+	strbuf_addf(&buf, "%s/.git", path);
+	git_dir = read_gitfile(buf.buf);
+	if (!git_dir)
+		git_dir = buf.buf;
+	if (!is_directory(git_dir)) {
+		strbuf_release(&buf);
+		/* The submodule is not populated, so we don't have to check it */
+		return 0;
+	}
+	strbuf_release(&buf);
+
+	memset(&cp, 0, sizeof(cp));
+	cp.argv = argv;
+	cp.env = local_repo_env;
+	cp.git_cmd = 1;
+	cp.no_stdin = 1;
+	cp.dir = path;
+	return run_command(&cp) == 0;
+}
+
 static int find_first_merges(struct object_array *result, const char *path,
 		struct commit *a, struct commit *b)
 {

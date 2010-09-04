@@ -8,6 +8,7 @@
 #include "progress.h"
 #include "refs.h"
 #include "attr.h"
+#include "submodule.h"
 
 /*
  * Error messages expected by scripts out of plumbing commands such as
@@ -25,6 +26,9 @@ static const char *unpack_plumbing_errors[NB_UNPACK_TREES_ERROR_TYPES] = {
 
 	/* ERROR_NOT_UPTODATE_DIR */
 	"Updating '%s' would lose untracked files in it",
+
+	/* ERROR_NOT_UPTODATE_SUBMODULE */
+	"Updating submodule '%s' would lose modifications in it",
 
 	/* ERROR_WOULD_LOSE_UNTRACKED_OVERWRITTEN */
 	"Untracked working tree file '%s' would be overwritten by merge.",
@@ -70,6 +74,8 @@ void setup_unpack_trees_porcelain(struct unpack_trees_options *opts,
 
 	msgs[ERROR_NOT_UPTODATE_DIR] =
 		"Updating the following directories would lose untracked files in it:\n%s";
+	msgs[ERROR_NOT_UPTODATE_SUBMODULE] =
+		"Updating the following submodules would lose modifications in it:\n%s";
 
 	if (advice_commit_before_merge)
 		msg = "The following untracked working tree files would be %s by %s:\n%%s"
@@ -1012,6 +1018,8 @@ int unpack_trees(unsigned len, struct tree_desc *t, struct unpack_trees_options 
 	state.force = 1;
 	state.quiet = 1;
 	state.refresh_cache = 1;
+	state.reset = o->reset;
+	state.recurse_submodules = o->recurse_submodules;
 
 	memset(&el, 0, sizeof(el));
 	if (!core_apply_sparse_checkout || !o->update)
@@ -1206,17 +1214,15 @@ static int verify_uptodate_1(struct cache_entry *ce,
 	if (!lstat(ce->name, &st)) {
 		int flags = CE_MATCH_IGNORE_VALID|CE_MATCH_IGNORE_SKIP_WORKTREE;
 		unsigned changed = ie_match_stat(o->src_index, ce, &st, flags);
-		if (!changed)
-			return 0;
-		/*
-		 * NEEDSWORK: the current default policy is to allow
-		 * submodule to be out of sync wrt the supermodule
-		 * index.  This needs to be tightened later for
-		 * submodules that are marked to be automatically
-		 * checked out.
-		 */
-		if (S_ISGITLINK(ce->ce_mode))
-			return 0;
+		if (!changed) {
+			if (!S_ISGITLINK(ce->ce_mode) || !o->recurse_submodules ||
+			    (ce_stage(ce) ? is_submodule_checkout_safe(ce->name, ce->sha1)
+			    : !is_submodule_modified(ce->name, 1)))
+				return 0;
+		} else
+			if (S_ISGITLINK(ce->ce_mode) && !o->recurse_submodules)
+				return 0;
+
 		errno = 0;
 	}
 	if (errno == ENOENT)
@@ -1237,6 +1243,36 @@ static int verify_uptodate_sparse(struct cache_entry *ce,
 				  struct unpack_trees_options *o)
 {
 	return verify_uptodate_1(ce, o, ERROR_SPARSE_NOT_UPTODATE_FILE);
+}
+
+/*
+ * When a submodule gets turned into an unmerged entry, we want it to be
+ * up-to-date regarding the merge changes.
+ */
+static int verify_uptodate_submodule(struct cache_entry *old,
+				     struct cache_entry *new,
+				     struct unpack_trees_options *o)
+{
+	struct stat st;
+
+	if (o->index_only || (!((old->ce_flags & CE_VALID) || ce_skip_worktree(old)) && (o->reset || ce_uptodate(old))))
+		return 0;
+	if (!lstat(old->name, &st)) {
+		unsigned changed = ie_match_stat(o->src_index, old, &st, CE_MATCH_IGNORE_VALID|CE_MATCH_IGNORE_SKIP_WORKTREE);
+		if (!changed) {
+			if (!S_ISGITLINK(old->ce_mode) ||
+			    !o->recurse_submodules ||
+			    is_submodule_checkout_safe(new->name, new->sha1))
+				return 0;
+		} else
+			if (S_ISGITLINK(old->ce_mode) && !o->recurse_submodules)
+				return 0;
+		errno = 0;
+	}
+	if (errno == ENOENT)
+		return 0;
+	return o->gently ? -1 :
+		add_rejected_path(o, ERROR_NOT_UPTODATE_SUBMODULE, old->name);
 }
 
 static void invalidate_ce_path(struct cache_entry *ce, struct unpack_trees_options *o)
@@ -1492,8 +1528,13 @@ static int merged_entry(struct cache_entry *merge, struct cache_entry *old,
 			copy_cache_entry(merge, old);
 			update = 0;
 		} else {
-			if (verify_uptodate(old, o))
-				return -1;
+			if (S_ISGITLINK(old->ce_mode) ||
+			    S_ISGITLINK(merge->ce_mode)) {
+				if (verify_uptodate_submodule(old, merge, o))
+					return -1;
+			} else
+				if (verify_uptodate(old, o))
+					return -1;
 			/* Migrate old flags over */
 			update |= old->ce_flags & (CE_SKIP_WORKTREE | CE_NEW_SKIP_WORKTREE);
 			invalidate_ce_path(old, o);
