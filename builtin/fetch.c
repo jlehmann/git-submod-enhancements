@@ -28,7 +28,13 @@ enum {
 	TAGS_SET = 2
 };
 
-static int all, append, dry_run, force, keep, multiple, prune, recursive = -1, update_head_ok, verbosity;
+enum {
+	RECURSIVE_UNSET = 0,
+	RECURSIVE_DEFAULT = 1,
+	RECURSIVE_SET = 2
+};
+
+static int all, append, dry_run, force, keep, multiple, prune, recursive = RECURSIVE_DEFAULT, update_head_ok, verbosity;
 static int progress;
 static int tags = TAGS_DEFAULT;
 static const char *depth;
@@ -55,8 +61,8 @@ static struct option builtin_fetch_options[] = {
 		    "do not fetch all tags (--no-tags)", TAGS_UNSET),
 	OPT_BOOLEAN('p', "prune", &prune,
 		    "prune tracking branches no longer on remote"),
-	OPT_BOOLEAN(0, "recursive", &recursive,
-		    "control recursive fetching of submodules"),
+	OPT_SET_INT(0, "recursive", &recursive,
+		    "control recursive fetching of submodules", RECURSIVE_SET),
 	OPT_BOOLEAN(0, "dry-run", &dry_run,
 		    "dry run"),
 	OPT_BOOLEAN('k', "keep", &keep, "keep downloaded pack"),
@@ -946,6 +952,7 @@ int cmd_fetch(int argc, const char **argv, const char *prefix)
 		add_options_to_argv(&num_options, options);
 		result = fetch_populated_submodules(num_options, options,
 						    submodule_prefix,
+						    recursive == RECURSIVE_SET,
 						    verbosity < 0);
 	}
 
