@@ -246,8 +246,8 @@ void show_submodule_summary(FILE *f, const char *path,
 int fetch_populated_submodules(int num_options, const char **options,
 			       const char *prefix, int forced, int quiet)
 {
-	int i, result = 0, argc = 0;
-	struct child_process cp;
+	int i, result = 0, argc = 0, cp_len = 0;
+	struct child_process cp[128];
 	const char **argv;
 	struct string_list_item *name_for_path;
 	const char *work_tree = get_git_work_tree();
@@ -265,12 +265,6 @@ int fetch_populated_submodules(int num_options, const char **options,
 	if (forced)
 		argv[argc++] = "--recursive";
 	argv[argc++] = "--submodule-prefix";
-
-	memset(&cp, 0, sizeof(cp));
-	cp.argv = argv;
-	cp.env = local_repo_env;
-	cp.git_cmd = 1;
-	cp.no_stdin = 1;
 
 	for (i = 0; i < active_nr; i++) {
 		struct strbuf submodule_path = STRBUF_INIT;
@@ -305,15 +299,28 @@ int fetch_populated_submodules(int num_options, const char **options,
 		if (is_directory(git_dir)) {
 			if (!quiet)
 				printf("Fetching submodule %s%s\n", prefix, ce->name);
-			cp.dir = submodule_path.buf;
+			memset(&cp[cp_len], 0, sizeof(cp[cp_len]));
+			cp[cp_len].argv = argv;
+			cp[cp_len].env = local_repo_env;
+			cp[cp_len].git_cmd = 1;
+			cp[cp_len].no_stdin = 1;
+			cp[cp_len].dir = submodule_path.buf;
 			argv[argc] = submodule_prefix.buf;
-			if (run_command(&cp))
+			if (start_command(&cp[cp_len]))
 				result = 1;
+
+			cp_len++;
 		}
 		strbuf_release(&submodule_path);
 		strbuf_release(&submodule_git_dir);
 		strbuf_release(&submodule_prefix);
 	}
+
+	for (i = 0; i < cp_len; i++) {
+		if (finish_command(&cp[i]))
+			result = 1;
+	}
+
 	free(argv);
 	return result;
 }
