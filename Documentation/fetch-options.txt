@@ -64,6 +64,20 @@ endif::git-pull[]
 	specified with the remote.<name>.tagopt setting. See
 	linkgit:git-config[1].
 
+--[no-]recursive::
+	By default new commits of all populated submodules will be fetched
+	too. This option can be used to disable/enable recursive fetching of
+	submodules.
+
+ifndef::git-pull[]
+--submodule-prefix::
+	When recursing into nested submodules it is not sufficient to just
+	print out the submodule path, all directories already traversed from
+	the superproject have to be printed too. This option is used to provide
+	that information, its value is prepended to the local submodule path
+	before it is printed out.
+endif::git-pull[]
+
 -u::
 --update-head-ok::
 	By default 'git fetch' refuses to update the head which
