@@ -16,8 +16,8 @@ add_upstream_commit() {
 		git add subfile &&
 		git commit -m new subfile &&
 		head2=$(git rev-parse --short HEAD) &&
-		echo "From $pwd/submodule" > ../expect.err &&
-		echo "   $head1..$head2  master     -> origin/master" >> ../expect.err
+		echo "From $pwd/submodule" > ../expect_1st.err &&
+		echo "   $head1..$head2  master     -> origin/master" >> ../expect_1st.err
 	)
 	(
 		cd deepsubmodule &&
@@ -27,9 +27,10 @@ add_upstream_commit() {
 		git add deepsubfile &&
 		git commit -m new deepsubfile &&
 		head2=$(git rev-parse --short HEAD) &&
-		echo "From $pwd/deepsubmodule" >> ../expect.err &&
-		echo "   $head1..$head2  master     -> origin/master" >> ../expect.err
-	)
+		echo "From $pwd/deepsubmodule" > ../expect_2nd.err &&
+		echo "   $head1..$head2  master     -> origin/master" >> ../expect_2nd.err
+	) &&
+	cat expect_1st.err expect_2nd.err > expect.err
 }
 
 test_expect_success setup '
@@ -58,6 +59,7 @@ test_expect_success setup '
 		git submodule update --init --recursive
 	) &&
 	echo "Fetching submodule submodule" > expect.out &&
+	cp expect.out expect_1st.out &&
 	echo "Fetching submodule submodule/deepsubmodule" >> expect.out
 '
 
@@ -158,6 +160,50 @@ test_expect_success "--recursive propagates to submodules" '
 	) &&
 	test_cmp expect.out actual.out &&
 	test_cmp expect.err actual.err
+'
+
+test_expect_success "fetch.recursive sets default and --recursive overrides it" '
+	add_upstream_commit &&
+	(
+		cd downstream &&
+		(
+			cd submodule &&
+			git config -f .gitmodules --unset submodule.deepsubmodule.fetch &&
+			git config fetch.recursive false
+		) &&
+		git fetch >../actual.out 2>../actual.err
+	) &&
+	test_cmp expect_1st.out actual.out &&
+	test_cmp expect_1st.err actual.err &&
+	(
+		cd downstream &&
+		git fetch --recursive >../actual.out 2>../actual.err
+	) &&
+	test_cmp expect.out actual.out &&
+	test_cmp expect_2nd.err actual.err
+'
+
+test_expect_success "fetch setting from .git/config overrides fetch.recursive config setting" '
+	add_upstream_commit &&
+	(
+		cd downstream &&
+		git config submodule.submodule.fetch true &&
+		git fetch >../actual.out 2>../actual.err
+	) &&
+	test_cmp expect_1st.out actual.out &&
+	test_cmp expect_1st.err actual.err &&
+	(
+		cd downstream &&
+		(
+			cd submodule &&
+			git config --unset fetch.recursive
+		) &&
+		git config fetch.recursive false &&
+		git config submodule.submodule.fetch true &&
+		git fetch >../actual.out 2>../actual.err
+	) &&
+	test_cmp expect.out actual.out &&
+	test_cmp expect_2nd.err actual.err
 '
 
 test_done

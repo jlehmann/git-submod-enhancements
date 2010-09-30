@@ -12,6 +12,7 @@
 struct string_list config_name_for_path;
 struct string_list config_fetch_for_name;
 struct string_list config_ignore_for_name;
+static int config_fetch_recursive = 1;
 
 static int add_submodule_odb(const char *path)
 {
@@ -68,6 +69,10 @@ int submodule_config(const char *var, const char *value, void *cb)
 {
 	if (!prefixcmp(var, "submodule."))
 		return parse_submodule_config_option(var, value);
+	if (!strcmp(var, "fetch.recursive")) {
+		config_fetch_recursive = git_config_bool(var, value);
+		return 0;
+	}
 	return 0;
 }
 
@@ -286,6 +291,8 @@ int fetch_populated_submodules(int num_options, const char **options,
 			struct string_list_item *fetch_option;
 			fetch_option = unsorted_string_list_lookup(&config_fetch_for_name, name);
 			if (fetch_option && !fetch_option->util)
+				continue;
+			if (!fetch_option && !config_fetch_recursive)
 				continue;
 		}
 
