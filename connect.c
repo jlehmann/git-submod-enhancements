@@ -205,11 +205,17 @@ static int git_tcp_connect_sock(char *host, int flags)
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_protocol = IPPROTO_TCP;
+	/* Try IPv4 first to avoid timeouts due to DNS not reachable via IPv6*/
+	hints.ai_family = AF_INET;
 
 	if (flags & CONNECT_VERBOSE)
 		fprintf(stderr, "Looking up %s ... ", host);
 
 	gai = getaddrinfo(host, port, &hints, &ai);
+	if (gai) { /* Try IPv6 too if IPv4 failed */
+		hints.ai_family = AF_UNSPEC;
+		gai = getaddrinfo(host, port, &hints, &ai);
+	}
 	if (gai)
 		die("Unable to look up %s (port %s) (%s)", host, port, gai_strerror(gai));
 
