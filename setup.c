@@ -313,10 +313,109 @@ const char *read_gitfile_gently(const char *path)
 	return path;
 }
 
+/*
+ * Given "foo/bar" and "hey/hello/world", return "../../hey/hello/world/"
+ * Either path1 or path2 can be NULL
+ */
+static char *make_path_to_path(const char *path1, const char *path2)
+{
+	int nr_back = 0;
+	int i, pathlen = path2 ? strlen(path2) : 0;
+	char *buf, *p;
+
+	if (path1 && *path1) {
+		nr_back = 1;
+		while (*path1) {
+			if (*path1 == '/')
+				nr_back++;
+			path1++;
+		}
+	}
+
+	if (!nr_back && !pathlen)
+		return NULL;
+
+	p = buf = xmalloc(3*nr_back + pathlen + 2); /* "../"^nr_back + path2 + '/' + NULL */
+	for (i = 0; i < nr_back; i++) {
+		memcpy(p, "../", 3);
+		p += 3;
+	}
+	if (pathlen) {
+		memcpy(p, path2, pathlen);
+		p += pathlen;
+		*p++ = '/';
+	}
+	*p = '\0';
+	return buf;
+}
+
+/*
+ * Return a prefix if cwd inside worktree, or NULL otherwise.
+ * Also fill startup_info struct.
+ */
+static const char *setup_prefix(const char *cwd)
+{
+	const char *worktree = get_git_work_tree();
+	int len = 0, cwd_len = strlen(cwd), worktree_len = strlen(worktree);
+
+	while (worktree[len] && worktree[len] == cwd[len])
+		len++;
+
+	if (!worktree[len] && !cwd[len]) {
+		if (startup_info) {
+			startup_info->cwd_to_worktree = NULL;
+			startup_info->worktree_to_cwd = NULL;
+		}
+		return NULL;
+	}
+	/* get /foo/, not /foo/baa if /foo/baa1 and /foo/baa2 are given */
+	else if (worktree[len] && cwd[len]) {
+		while (len && worktree[len] != '/')
+			len--;
+		len++;
+	}
+	else {
+		if (worktree[len]) {
+			if (worktree[len] != '/') {
+				while (len && worktree[len] != '/')
+					len--;
+			}
+		}
+		else {
+			if (cwd[len] != '/') {
+				while (len && cwd[len] != '/')
+					len--;
+			}
+		}
+		len++;		/* must be a slash here, skip it */
+	}
+
+	if (len < cwd_len && len < worktree_len) {
+		if (startup_info) {
+			startup_info->cwd_to_worktree = make_path_to_path(cwd+len, worktree+len);
+			startup_info->worktree_to_cwd = make_path_to_path(worktree+len, cwd+len);
+		}
+		return NULL;
+	}
+
+	if (startup_info) {
+		if (len < cwd_len) { /* cwd inside worktree */
+			startup_info->cwd_to_worktree = make_path_to_path(cwd+len, NULL);
+			startup_info->worktree_to_cwd = make_path_to_path(NULL, cwd+len);
+		}
+		else {
+			startup_info->cwd_to_worktree = make_path_to_path(NULL, worktree+len);
+			startup_info->worktree_to_cwd = make_path_to_path(worktree+len, NULL);
+		}
+	}
+
+	return len < cwd_len ? cwd+len : NULL;
+}
+
 static const char *setup_explicit_git_dir(const char *gitdirenv,
 				const char *work_tree_env, int *nongit_ok)
 {
-	static char buffer[1024 + 1];
+	static char buffer[PATH_MAX];
 	const char *retval;
 
 	if (PATH_MAX - 40 < strlen(gitdirenv))
@@ -337,9 +436,10 @@ static const char *setup_explicit_git_dir(const char *gitdirenv,
 	}
 	if (check_repository_format_gently(nongit_ok))
 		return NULL;
-	retval = get_relative_cwd(buffer, sizeof(buffer) - 1,
-			get_git_work_tree());
-	if (!retval || !*retval)
+	if (!getcwd(buffer, sizeof(buffer)))
+		die_errno("can't find the current directory");
+	retval = setup_prefix(buffer);
+	if (!retval)
 		return NULL;
 	set_git_dir(make_absolute_path(gitdirenv));
 	if (chdir(work_tree_env) < 0)

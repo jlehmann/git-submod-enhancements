@@ -623,6 +623,16 @@ int cmd_rev_parse(int argc, const char **argv, const char *prefix)
 					puts(prefix);
 				continue;
 			}
+			if (!strcmp(arg, "--cwd-to-worktree")) {
+				if (startup_info->cwd_to_worktree)
+					puts(startup_info->cwd_to_worktree);
+				continue;
+			}
+			if (!strcmp(arg, "--worktree-to-cwd")) {
+				if (startup_info->worktree_to_cwd)
+					puts(startup_info->worktree_to_cwd);
+				continue;
+			}
 			if (!strcmp(arg, "--show-cdup")) {
 				const char *pfx = prefix;
 				if (!is_inside_work_tree()) {

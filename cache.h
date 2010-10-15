@@ -1125,6 +1125,8 @@ const char *split_cmdline_strerror(int cmdline_errno);
 struct startup_info {
 	int have_repository;
 	const char *prefix;
+	char *cwd_to_worktree; /* chdir("this"); from cwd would return to worktree */
+	char *worktree_to_cwd; /* chdir("this"); from worktree would return to cwd */
 };
 extern struct startup_info *startup_info;
 
