@@ -531,6 +531,8 @@ static int grep_file(struct grep_opt *opt, const char *filename)
 	struct strbuf buf = STRBUF_INIT;
 	char *name;
 
+	if (startup_info->cwd_to_worktree)
+		strbuf_addstr(&buf,startup_info->cwd_to_worktree);
 	if (opt->relative && opt->prefix_length)
 		quote_path_relative(filename, -1, &buf, opt->prefix);
 	else
@@ -646,6 +648,8 @@ static int grep_tree(struct grep_opt *opt, const char **paths,
 	while (tree_entry(tree, &entry)) {
 		int te_len = tree_entry_len(entry.path, entry.sha1);
 		pathbuf.len = len;
+		if (startup_info->cwd_to_worktree)
+			strbuf_addstr(&pathbuf,startup_info->cwd_to_worktree);
 		strbuf_add(&pathbuf, entry.path, te_len);
 
 		if (S_ISDIR(entry.mode))
