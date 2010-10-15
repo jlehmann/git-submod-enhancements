@@ -587,6 +587,91 @@ static void run_pager(struct grep_opt *opt, const char *prefix)
 	free(argv);
 }
 
+static int pattern_list_to_argv(struct grep_opt *opt, const char **argv, int len)
+{
+	int i = 0;
+	struct grep_pat *p = opt->pattern_list;
+	while(p) {
+		if (i > len)
+			die("grep: not enough space for subprocess args");
+		if (p->token == GREP_PATTERN)
+			argv[i++] = "-e";
+		argv[i++] = p->pattern;
+		p = p->next;
+	}
+	return i;
+}
+
+static const char **create_sub_grep_argv(struct grep_opt *opt,
+		const char *path, const char *sha1, const char *tree_name)
+{
+	#define NUM_ARGS 10
+	struct strbuf buf = STRBUF_INIT;
+	const char **argv;
+	int i = 0;
+
+	argv = xcalloc(NUM_ARGS, sizeof(const char *));
+	argv[i++] = "grep";
+
+	if (opt->linenum)
+		argv[i++] = "-n";
+	if (opt->invert)
+		argv[i++] = "-v";
+	if (opt->ignore_case)
+		argv[i++] = "-i";
+	if (opt->count)
+		argv[i++] = "-c";
+	if (opt->name_only)
+		argv[i++] = "-l";
+	if (opt->recurse_submodules)
+		argv[i++] = "--recursive";
+
+	i += pattern_list_to_argv(opt, &argv[i], NUM_ARGS-(i+1));
+	if (sha1) {
+		argv[i++] = sha1;
+	}
+	argv[i++] = NULL;
+
+	strbuf_release(&buf);
+	return argv;
+}
+
+static int grep_submodule(struct grep_opt *opt, const char *path,
+			  const char *sha1, const char *tree_name)
+{
+	struct strbuf buf = STRBUF_INIT;
+	struct strbuf pre_buf = STRBUF_INIT;
+	struct child_process cp;
+	const char **argv = create_sub_grep_argv(opt, path, sha1, tree_name);
+	const char *git_dir;
+	int hit = 0;
+	memset(&cp, 0, sizeof(cp));
+
+	strbuf_addf(&buf, "%s/.git", path);
+	git_dir = read_gitfile_gently(buf.buf);
+	if (!git_dir)
+		git_dir = buf.buf;
+	if (!is_directory(git_dir))
+		goto out_free;
+
+	setenv("GIT_SUPER_REFNAME", tree_name, 1);
+	setenv(GIT_DIR_ENVIRONMENT, git_dir, 1);
+	setenv(GIT_WORK_TREE_ENVIRONMENT, path, 1);
+	cp.argv = argv;
+	cp.git_cmd = 1;
+	cp.no_stdin = 1;
+	if (run_command(&cp) == 0)
+		hit = 1;
+out_free:
+	unsetenv("GIT_SUPER_REFNAME");
+	unsetenv(GIT_DIR_ENVIRONMENT);
+	unsetenv(GIT_WORK_TREE_ENVIRONMENT);
+	free(argv);
+	strbuf_release(&buf);
+	strbuf_release(&pre_buf);
+	return hit;
+}
+
 static int grep_cache(struct grep_opt *opt, const char **paths, int cached)
 {
 	int hit = 0;
@@ -597,6 +682,10 @@ static int grep_cache(struct grep_opt *opt, const char **paths, int cached)
 		struct cache_entry *ce = active_cache[nr];
 		if (!pathspec_matches(paths, ce->name, opt->max_depth))
 			continue;
+		if (S_ISGITLINK(ce->ce_mode) && opt->recurse_submodules) {
+			hit |= grep_submodule(opt, ce->name, NULL, NULL);
+			continue;
+		}
 		if (!S_ISREG(ce->ce_mode))
 			continue;
 		/*
@@ -634,11 +723,16 @@ static int grep_tree(struct grep_opt *opt, const char **paths,
 	char *down;
 	int tn_len = strlen(tree_name);
 	struct strbuf pathbuf;
+	const char *refname = getenv("GIT_SUPER_REFNAME");
+	int rn_len = refname ? strlen(refname) : 0;
 
-	strbuf_init(&pathbuf, PATH_MAX + tn_len);
+	strbuf_init(&pathbuf, PATH_MAX + MAX(tn_len, rn_len));
 
 	if (tn_len) {
-		strbuf_add(&pathbuf, tree_name, tn_len);
+		if (refname)
+			strbuf_add(&pathbuf, refname, rn_len);
+		else
+			strbuf_add(&pathbuf, tree_name, tn_len);
 		strbuf_addch(&pathbuf, ':');
 		tn_len = pathbuf.len;
 	}
@@ -664,6 +758,9 @@ static int grep_tree(struct grep_opt *opt, const char **paths,
 			;
 		else if (S_ISREG(entry.mode))
 			hit |= grep_sha1(opt, entry.sha1, pathbuf.buf, tn_len);
+		else if (S_ISGITLINK(entry.mode) && opt->recurse_submodules)
+			hit |= grep_submodule(opt, entry.path,
+				sha1_to_hex(entry.sha1), tree_name);
 		else if (S_ISDIR(entry.mode)) {
 			enum object_type type;
 			struct tree_desc sub;
@@ -931,6 +1028,8 @@ int cmd_grep(int argc, const char **argv, const char *prefix)
 			    "allow calling of grep(1) (ignored by this build)"),
 		{ OPTION_CALLBACK, 0, "help-all", &options, NULL, "show usage",
 		  PARSE_OPT_HIDDEN | PARSE_OPT_NOARG, help_callback },
+		OPT_BOOLEAN(0, "recursive", &opt.recurse_submodules,
+			"recurse into submodules"),
 		OPT_END()
 	};
 
