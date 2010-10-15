@@ -595,9 +595,9 @@ static int grep_cache(struct grep_opt *opt, const char **paths, int cached)
 
 	for (nr = 0; nr < active_nr; nr++) {
 		struct cache_entry *ce = active_cache[nr];
-		if (!S_ISREG(ce->ce_mode))
-			continue;
 		if (!pathspec_matches(paths, ce->name, opt->max_depth))
+			continue;
+		if (!S_ISREG(ce->ce_mode))
 			continue;
 		/*
 		 * If CE_VALID is on, we assume worktree file and its cache entry
