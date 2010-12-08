@@ -134,6 +134,13 @@ test_expect_success 'submodule add --branch' '
 	test_cmp empty untracked
 '
 
+test_expect_success 'submodule add --branch succeeds even when branch is at HEAD' '
+	(
+		cd addtest &&
+		git submodule add -b master "$submodurl" submod-existing-branch
+	)
+'
+
 test_expect_success 'submodule add with ./ in path' '
 	echo "refs/heads/master" >expect &&
 	>empty &&

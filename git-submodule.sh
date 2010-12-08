@@ -289,7 +289,9 @@ Use -f if you really want to add it." >&2
 			# ash fails to wordsplit ${branch:+-b "$branch"...}
 			case "$branch" in
 			'') git checkout -f -q ;;
-			?*) git checkout -f -q -B "$branch" "origin/$branch" ;;
+			?*) if [ "$(git symbolic-ref -q HEAD)" != "refs/heads/$branch"  ]; then
+				git checkout -f -q -b "$branch" "origin/$branch"
+			fi ;;
 			esac
 		) || die "$(eval_gettext "Unable to checkout submodule '\$path'")"
 	fi
