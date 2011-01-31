@@ -529,7 +529,9 @@ static void update_refs_for_switch(struct checkout_opts *opts,
 		}
 		else
 			create_branch(old->name, opts->new_branch, new->name,
-				      opts->new_branch_force ? 1 : 0,
+				      opts->new_branch_force
+				      ? CREATE_BRANCH_UPDATE_CURRENT_OK
+				      : 0,
 				      opts->new_branch_log, opts->track);
 		new->name = opts->new_branch;
 		setup_branch_path(new);

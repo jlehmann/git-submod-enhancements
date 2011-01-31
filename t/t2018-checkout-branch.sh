@@ -169,4 +169,17 @@ test_expect_success 'checkout -f -B to an existing branch with mergeable changes
 	test_must_fail test_dirty_mergeable
 '
 
+test_expect_success 'checkout -b/B the current branch' '
+	git reset --hard &&
+	git checkout branch1 &&
+	it=$(git rev-parse --verify HEAD) &&
+	test_must_fail git checkout -b branch1 HEAD &&
+	git checkout -B branch1 $it &&
+	test "$it" = "$(git rev-parse --verify HEAD)" &&
+	test "refs/heads/branch1" = "$(git symbolic-ref HEAD)" &&
+	git checkout -B branch1 HEAD &&
+	test "$it" = "$(git rev-parse --verify HEAD)" &&
+	test "refs/heads/branch1" = "$(git symbolic-ref HEAD)"
+'
+
 test_done
