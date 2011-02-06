@@ -205,12 +205,18 @@ proc checkout_index {msg pathList after} {
 	if {$batch > 25} {set batch 25}
 
 	$::main_status start $msg [mc "files"]
+	if {[git-version >= "1.7.1"]} {
+		set recurse_submodules --recurse-submodules
+	} else {
+		set recurse_submodules {}
+	}
 	set fd [git_write checkout-index \
 		--index \
 		--quiet \
 		--force \
 		-z \
 		--stdin \
+		$recurse_submodules \
 		]
 	fconfigure $fd \
 		-blocking 0 \
