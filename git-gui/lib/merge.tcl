@@ -235,7 +235,12 @@ Continue with resetting the current changes?"]
 	}
 
 	if {[ask_popup $op_question] eq {yes}} {
-		set fd [git_read --stderr read-tree --reset -u -v HEAD]
+		if {[git-version >= "1.7.1"]} {
+			set recurse_submodules --recurse-submodules
+		} else {
+			set recurse_submodules {}
+		}
+		set fd [git_read --stderr read-tree --reset -u -v $recurse_submodules HEAD]
 		fconfigure $fd -blocking 0 -translation binary
 		fileevent $fd readable [namespace code [list _reset_wait $fd]]
 		$::main_status start [mc "Aborting"] [mc "files reset"]

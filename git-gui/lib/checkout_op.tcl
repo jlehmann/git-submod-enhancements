@@ -345,10 +345,16 @@ method _readtree {} {
 		[mc "Updating working directory to '%s'..." [_name $this]] \
 		[mc "files checked out"]
 
+	if {[git-version >= "1.7.1"]} {
+		set recurse_submodules --recurse-submodules
+	} else {
+		set recurse_submodules {}
+	}
 	set fd [git_read --stderr read-tree \
 		-m \
 		-u \
 		-v \
+		$recurse_submodules \
 		--exclude-per-directory=.gitignore \
 		$HEAD \
 		$new_hash \
