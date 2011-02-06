@@ -181,7 +181,7 @@ int cmd_checkout_index(int argc, const char **argv, const char *prefix)
 	int all = 0;
 	int read_from_stdin = 0;
 	int prefix_length;
-	int force = 0, quiet = 0, not_new = 0;
+	int force = 0, quiet = 0, not_new = 0, recurse_submodules = 0;
 	struct option builtin_checkout_index_options[] = {
 		OPT_BOOLEAN('a', "all", &all,
 			"checks out all files in the index"),
@@ -206,6 +206,8 @@ int cmd_checkout_index(int argc, const char **argv, const char *prefix)
 		OPT_CALLBACK(0, "stage", NULL, NULL,
 			"copy out the files from named stage",
 			option_parse_stage),
+		OPT_BOOLEAN(0, "recurse-submodules", &recurse_submodules,
+			"recursively checkout populated submodules"),
 		OPT_END()
 	};
 
@@ -225,6 +227,7 @@ int cmd_checkout_index(int argc, const char **argv, const char *prefix)
 	state.force = force;
 	state.quiet = quiet;
 	state.not_new = not_new;
+	state.recurse_submodules = recurse_submodules;
 
 	if (state.base_dir_len || to_tempfile) {
 		/* when --prefix is specified we do not

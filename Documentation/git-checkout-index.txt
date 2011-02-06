@@ -11,7 +11,7 @@ SYNOPSIS
 [verse]
 'git checkout-index' [-u] [-q] [-a] [-f] [-n] [--prefix=<string>]
 		   [--stage=<number>|all]
-		   [--temp]
+		   [--temp] [--recurse-submodules]
 		   [-z] [--stdin]
 		   [--] [<file>...]
 
@@ -67,6 +67,12 @@ OPTIONS
 -z::
 	Only meaningful with `--stdin`; paths are separated with
 	NUL character instead of LF.
+
+--recurse-submodules::
+	When this option is given populated submodules will be checked out
+	recursively. Otherwise only the hash recorded in the superproject will
+	be changed.
+
 
 \--::
 	Do not interpret any more arguments as options.
