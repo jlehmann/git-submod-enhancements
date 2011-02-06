@@ -237,7 +237,7 @@ save_stash () {
 
 	if test -z "$patch_mode"
 	then
-		git reset --hard ${GIT_QUIET:+-q}
+		git reset --no-recurse-submodules --hard ${GIT_QUIET:+-q}
 		test "$untracked" = "all" && CLEAN_X_OPTION=-x || CLEAN_X_OPTION=
 		if test -n "$untracked"
 		then

@@ -379,14 +379,14 @@ test_expect_success 'update --init' '
 
 test_expect_success 'do not add files from a submodule' '
 
-	git reset --hard &&
+	git reset --no-recurse-submodules --hard &&
 	test_must_fail git add init/a
 
 '
 
 test_expect_success 'gracefully add submodule with a trailing slash' '
 
-	git reset --hard &&
+	git reset --no-recurse-submodules --hard &&
 	git commit -m "commit subproject" init &&
 	(cd init &&
 	 echo b > a) &&

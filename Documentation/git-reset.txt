@@ -94,6 +94,10 @@ OPTIONS
 --quiet::
 	Be quiet, only report errors.
 
+--[no-]recurse-submodules::
+	Don't update the working trees of submodules. This option is only
+	valid when used with the --hard option.
+
 
 EXAMPLES
 --------

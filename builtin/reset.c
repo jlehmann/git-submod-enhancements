@@ -33,6 +33,8 @@ static const char *reset_type_names[] = {
 	N_("mixed"), N_("soft"), N_("hard"), N_("merge"), N_("keep"), NULL
 };
 
+static int recurse_submodules = 1;
+
 static inline int is_merge(void)
 {
 	return !access(git_path("MERGE_HEAD"), F_OK);
@@ -80,6 +82,7 @@ static int reset_index_file(const unsigned char *sha1, int reset_type, int quiet
 		nr++;
 		opts.fn = twoway_merge;
 	}
+	opts.recurse_submodules = recurse_submodules;
 
 	if (!fill_tree_descriptor(desc + nr - 1, sha1))
 		return error(_("Failed to find tree of %s."), sha1_to_hex(sha1));
@@ -246,6 +249,8 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 		OPT_SET_INT(0, "keep", &reset_type,
 				"reset HEAD but keep local changes", KEEP),
 		OPT_BOOLEAN('p', "patch", &patch_mode, "select hunks interactively"),
+		OPT_BOOLEAN(0, "recurse-submodules", &recurse_submodules,
+				"reset submodule content too when resetting working tree hard"),
 		OPT_END()
 	};
 
@@ -297,6 +302,8 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 		die(_("Could not parse object '%s'."), rev);
 	hashcpy(sha1, commit->object.sha1);
 
+	if (!recurse_submodules && reset_type != HARD)
+		die("--no-recurse-submodules can only be used with --hard");
 	if (patch_mode) {
 		if (reset_type != NONE)
 			die(_("--patch is incompatible with --{hard,mixed,soft}"));
