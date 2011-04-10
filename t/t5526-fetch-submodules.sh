@@ -209,7 +209,7 @@ test_expect_success "Recursion doesn't happen when no new commits are fetched in
 	! test -s actual.err
 '
 
-test_expect_success "Recursion stops when no new submodule commits are fetched" '
+test_expect_success C_LOCALE_OUTPUT "Recursion stops when no new submodule commits are fetched" '
 	head1=$(git rev-parse --short HEAD) &&
 	git add submodule &&
 	git commit -m "new submodule" &&
@@ -226,7 +226,7 @@ test_expect_success "Recursion stops when no new submodule commits are fetched" 
 	test_i18ncmp expect.out.sub actual.out
 '
 
-test_expect_success "Recursion doesn't happen when new superproject commits don't change any submodules" '
+test_expect_success C_LOCALE_OUTPUT "Recursion doesn't happen when new superproject commits don't change any submodules" '
 	add_upstream_commit &&
 	head1=$(git rev-parse --short HEAD) &&
 	echo a > file &&
@@ -243,7 +243,7 @@ test_expect_success "Recursion doesn't happen when new superproject commits don'
 	test_i18ncmp expect.err.file actual.err
 '
 
-test_expect_success "Recursion picks up config in submodule" '
+test_expect_success C_LOCALE_OUTPUT "Recursion picks up config in submodule" '
 	(
 		cd downstream &&
 		git fetch --recurse-submodules &&
@@ -272,7 +272,7 @@ test_expect_success "Recursion picks up config in submodule" '
 	test_i18ncmp expect.out actual.out
 '
 
-test_expect_success "Recursion picks up all submodules when necessary" '
+test_expect_success C_LOCALE_OUTPUT "Recursion picks up all submodules when necessary" '
 	add_upstream_commit &&
 	(
 		cd submodule &&
@@ -330,7 +330,7 @@ test_expect_success "'--recurse-submodules=on-demand' doesn't recurse when no ne
 	! test -s actual.err
 '
 
-test_expect_success "'--recurse-submodules=on-demand' recurses as deep as necessary (and ignores config)" '
+test_expect_success C_LOCALE_OUTPUT "'--recurse-submodules=on-demand' recurses as deep as necessary (and ignores config)" '
 	head1=$(git rev-parse --short HEAD) &&
 	git add submodule &&
 	git commit -m "new submodule" &&
@@ -358,7 +358,7 @@ test_expect_success "'--recurse-submodules=on-demand' recurses as deep as necess
 	test_i18ncmp expect.err actual.err
 '
 
-test_expect_success "'--recurse-submodules=on-demand' stops when no new submodule commits are found in the superproject (and ignores config)" '
+test_expect_success C_LOCALE_OUTPUT "'--recurse-submodules=on-demand' stops when no new submodule commits are found in the superproject (and ignores config)" '
 	add_upstream_commit &&
 	head1=$(git rev-parse --short HEAD) &&
 	echo a >> file &&
@@ -375,7 +375,7 @@ test_expect_success "'--recurse-submodules=on-demand' stops when no new submodul
 	test_i18ncmp expect.err.file actual.err
 '
 
-test_expect_success "'fetch.recurseSubmodules=on-demand' overrides global config" '
+test_expect_success C_LOCALE_OUTPUT "'fetch.recurseSubmodules=on-demand' overrides global config" '
 	(
 		cd downstream &&
 		git fetch --recurse-submodules
@@ -403,7 +403,7 @@ test_expect_success "'fetch.recurseSubmodules=on-demand' overrides global config
 	test_i18ncmp expect.err.2 actual.err
 '
 
-test_expect_success "'submodule.<sub>.fetchRecurseSubmodules=on-demand' overrides fetch.recurseSubmodules" '
+test_expect_success C_LOCALE_OUTPUT "'submodule.<sub>.fetchRecurseSubmodules=on-demand' overrides fetch.recurseSubmodules" '
 	(
 		cd downstream &&
 		git fetch --recurse-submodules
@@ -431,7 +431,7 @@ test_expect_success "'submodule.<sub>.fetchRecurseSubmodules=on-demand' override
 	test_i18ncmp expect.err.2 actual.err
 '
 
-test_expect_success "don't fetch submodule when newly recorded commits are already present" '
+test_expect_success C_LOCALE_OUTPUT "don't fetch submodule when newly recorded commits are already present" '
 	(
 		cd submodule &&
 		git checkout -q HEAD^^
