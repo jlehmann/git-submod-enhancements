@@ -5,6 +5,7 @@
 test_description='git checkout to switch between branches with symlink<->dir'
 
 . ./test-lib.sh
+. "$TEST_DIRECTORY"/lib-checkout.sh
 
 test_expect_success SYMLINKS setup '
 
@@ -34,18 +35,18 @@ test_expect_success SYMLINKS setup '
 
 test_expect_success SYMLINKS 'switch from symlink to dir' '
 
-	git checkout master
+	checkout_must_succeed master
 
 '
 
 test_expect_success SYMLINKS 'Remove temporary directories & switch to master' '
 	rm -fr frotz xyzzy nitfol &&
-	git checkout -f master
+	checkout_must_succeed -f master
 '
 
 test_expect_success SYMLINKS 'switch from dir to symlink' '
 
-	git checkout side
+	checkout_must_succeed side
 
 '
 

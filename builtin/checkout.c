@@ -35,6 +35,8 @@ struct checkout_opts {
 	int force_detach;
 	int writeout_stage;
 	int overwrite_ignore;
+	int writeout_error;
+	int dry_run;
 
 	const char *new_branch;
 	const char *new_branch_force;
@@ -378,6 +380,7 @@ static int reset_tree(struct tree *tree, const struct checkout_opts *o,
 	opts.verbose_update = !o->quiet && isatty(2);
 	opts.src_index = &the_index;
 	opts.dst_index = &the_index;
+	opts.dry_run = o->dry_run;
 	parse_tree(tree);
 	init_tree_desc(&tree_desc, tree->buffer, tree->size);
 	switch (unpack_trees(1, &tree_desc, &opts)) {
@@ -439,6 +442,7 @@ static int merge_working_tree(const struct checkout_opts *opts,
 		topts.head_idx = -1;
 		topts.src_index = &the_index;
 		topts.dst_index = &the_index;
+		topts.dry_run = opts->dry_run;
 
 		setup_unpack_trees_porcelain(&topts, "checkout");
 
@@ -529,12 +533,20 @@ static int merge_working_tree(const struct checkout_opts *opts,
 		}
 	}
 
-	if (write_cache(newfd, active_cache, active_nr) ||
-	    commit_locked_index(lock_file))
+	if (!opts->dry_run && (write_cache(newfd, active_cache, active_nr) ||
+			       commit_locked_index(lock_file)))
 		die(_("unable to write new index file"));
 
-	if (!opts->force && !opts->quiet)
-		show_local_changes(&new->commit->object, &opts->diff_options);
+	if (!opts->force && !opts->quiet) {
+		if (opts->dry_run) {
+			unsigned char sha1[20];
+			struct commit *head;
+			if (get_sha1("HEAD", sha1) || !(head = lookup_commit(sha1)))
+				die("checkout -n without HEAD?");
+			show_local_changes(&head->object, &opts->diff_options);
+		} else
+			show_local_changes(&new->commit->object, &opts->diff_options);
+	}
 
 	return 0;
 }
@@ -770,6 +782,9 @@ static int switch_branches(const struct checkout_opts *opts,
 
 	if (!opts->quiet && !old.path && old.commit && new->commit != old.commit)
 		orphaned_commit_warning(old.commit, new->commit);
+
+	if (opts->dry_run)
+		return ret;
 
 	update_refs_for_switch(opts, &old, new);
 
@@ -1029,6 +1044,7 @@ int cmd_checkout(int argc, const char **argv, const char *prefix)
 		OPT_STRING(0, "conflict", &conflict_style, N_("style"),
 			   N_("conflict style (merge or diff3)")),
 		OPT_BOOLEAN('p', "patch", &opts.patch_mode, N_("select hunks interactively")),
+		OPT__DRY_RUN(&opts.dry_run, "dry run"),
 		{ OPTION_BOOLEAN, 0, "guess", &dwim_new_local_branch, NULL,
 		  N_("second guess 'git checkout no-such-branch'"),
 		  PARSE_OPT_NOARG | PARSE_OPT_HIDDEN },

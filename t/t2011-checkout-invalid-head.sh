@@ -3,6 +3,7 @@
 test_description='checkout switching away from an invalid branch'
 
 . ./test-lib.sh
+. "$TEST_DIRECTORY"/lib-checkout.sh
 
 test_expect_success 'setup' '
 	echo hello >world &&
@@ -11,12 +12,12 @@ test_expect_success 'setup' '
 '
 
 test_expect_success 'checkout should not start branch from a tree' '
-	test_must_fail git checkout -b newbranch master^{tree}
+	checkout_must_fail -b newbranch master^{tree}
 '
 
 test_expect_success 'checkout master from invalid HEAD' '
 	echo $_z40 >.git/HEAD &&
-	git checkout master --
+	checkout_must_succeed master --
 '
 
 test_done

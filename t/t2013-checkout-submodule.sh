@@ -3,6 +3,7 @@
 test_description='checkout can handle submodules'
 
 . ./test-lib.sh
+. "$TEST_DIRECTORY"/lib-checkout.sh
 
 test_expect_success 'setup' '
 	mkdir submodule &&
@@ -33,16 +34,16 @@ test_expect_success '"checkout <submodule>" updates the index only' '
 	git update-index --refresh &&
 	git diff-files --quiet &&
 	git diff-index --quiet --cached HEAD &&
-	git checkout HEAD^ submodule &&
+	checkout_must_succeed HEAD^ submodule &&
 	test_must_fail git diff-files --quiet &&
-	git checkout HEAD submodule &&
+	checkout_must_succeed HEAD submodule &&
 	git diff-files --quiet
 '
 
 test_expect_success '"checkout <submodule>" honors diff.ignoreSubmodules' '
 	git config diff.ignoreSubmodules dirty &&
 	echo x> submodule/untracked &&
-	git checkout HEAD >actual 2>&1 &&
+	checkout_must_succeed HEAD >actual 2>&1 &&
 	! test -s actual
 '
 
@@ -50,7 +51,7 @@ test_expect_success '"checkout <submodule>" honors submodule.*.ignore from .gitm
 	git config diff.ignoreSubmodules none &&
 	git config -f .gitmodules submodule.submodule.path submodule &&
 	git config -f .gitmodules submodule.submodule.ignore untracked &&
-	git checkout HEAD >actual 2>&1 &&
+	checkout_must_succeed HEAD >actual 2>&1 &&
 	! test -s actual
 '
 
@@ -58,7 +59,7 @@ test_expect_success '"checkout <submodule>" honors submodule.*.ignore from .git/
 	git config -f .gitmodules submodule.submodule.ignore none &&
 	git config submodule.submodule.path submodule &&
 	git config submodule.submodule.ignore all &&
-	git checkout HEAD >actual 2>&1 &&
+	checkout_must_succeed HEAD >actual 2>&1 &&
 	! test -s actual
 '
 

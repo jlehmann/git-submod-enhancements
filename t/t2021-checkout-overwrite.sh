@@ -2,6 +2,7 @@
 
 test_description='checkout must not overwrite an untracked objects'
 . ./test-lib.sh
+. "$TEST_DIRECTORY"/lib-checkout.sh
 
 test_expect_success 'setup' '
 
@@ -14,7 +15,7 @@ test_expect_success 'setup' '
 
 test_expect_success 'create a commit where dir a/b changed to file' '
 
-	git checkout -b file &&
+	checkout_must_succeed -b file &&
 	rm -rf a/b &&
 	>a/b &&
 	git add -A &&
@@ -25,14 +26,14 @@ test_expect_success 'checkout commit with dir must not remove untracked a/b' '
 
 	git rm --cached a/b &&
 	git commit -m "un-track the file" &&
-	test_must_fail git checkout start &&
+	checkout_must_fail start &&
 	test -f a/b
 '
 
 test_expect_success SYMLINKS 'create a commit where dir a/b changed to symlink' '
 
 	rm -rf a/b &&	# cleanup if previous test failed
-	git checkout -f -b symlink start &&
+	checkout_must_succeed -f -b symlink start &&
 	rm -rf a/b &&
 	ln -s foo a/b &&
 	git add -A &&
@@ -43,7 +44,7 @@ test_expect_success SYMLINKS 'checkout commit with dir must not remove untracked
 
 	git rm --cached a/b &&
 	git commit -m "un-track the symlink" &&
-	test_must_fail git checkout start &&
+	checkout_must_fail start &&
 	test -h a/b
 '
 

@@ -3,6 +3,7 @@
 test_description='checkout '
 
 . ./test-lib.sh
+. "$TEST_DIRECTORY"/lib-checkout.sh
 
 # Arguments: <branch> <sha> [<checkout options>]
 #
@@ -64,14 +65,14 @@ test_expect_success 'checkout -b to a new branch, set to HEAD' '
 '
 
 test_expect_success 'checkout -b to a new branch, set to an explicit ref' '
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 	git branch -D branch2 &&
 
 	do_checkout branch2 $HEAD1
 '
 
 test_expect_success 'checkout -b to a new branch with unmergeable changes fails' '
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	# clean up from previous test
 	git branch -D branch2 &&
@@ -88,7 +89,7 @@ test_expect_success 'checkout -f -b to a new branch with unmergeable changes dis
 '
 
 test_expect_success 'checkout -b to a new branch preserves mergeable changes' '
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	# clean up from previous test
 	git branch -D branch2 &&
@@ -102,7 +103,7 @@ test_expect_success 'checkout -f -b to a new branch with mergeable changes disca
 	# clean up from previous test
 	git reset --hard &&
 
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	# clean up from previous test
 	git branch -D branch2 &&
@@ -128,25 +129,25 @@ test_expect_success 'checkout -b to @{-1} fails with the right branch name' '
 '
 
 test_expect_success 'checkout -B to an existing branch resets branch to HEAD' '
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	do_checkout branch2 "" -B
 '
 
 test_expect_success 'checkout -B to an existing branch from detached HEAD resets branch to HEAD' '
-	git checkout $(git rev-parse --verify HEAD) &&
+	checkout_must_succeed $(git rev-parse --verify HEAD) &&
 
 	do_checkout branch2 "" -B
 '
 
 test_expect_success 'checkout -B to an existing branch with an explicit ref resets branch to that ref' '
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	do_checkout branch2 $HEAD1 -B
 '
 
 test_expect_success 'checkout -B to an existing branch with unmergeable changes fails' '
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	setup_dirty_unmergeable &&
 	test_must_fail do_checkout branch2 $HEAD1 -B &&
@@ -160,7 +161,7 @@ test_expect_success 'checkout -f -B to an existing branch with unmergeable chang
 '
 
 test_expect_success 'checkout -B to an existing branch preserves mergeable changes' '
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	setup_dirty_mergeable &&
 	do_checkout branch2 $HEAD1 -B &&
@@ -171,7 +172,7 @@ test_expect_success 'checkout -f -B to an existing branch with mergeable changes
 	# clean up from previous test
 	git reset --hard &&
 
-	git checkout branch1 &&
+	checkout_must_succeed branch1 &&
 
 	setup_dirty_mergeable &&
 	do_checkout branch2 $HEAD1 "-f -B" &&

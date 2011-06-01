@@ -110,6 +110,11 @@ OPTIONS
 When checking out paths from the index, do not fail upon unmerged
 entries; instead, unmerged entries are ignored.
 
+-n::
+--dry-run::
+	Check if the command would error out, without updating any refs
+	nor the files in the working tree for real.
+
 --ours::
 --theirs::
 	When checking out paths from the index, check out stage #2

@@ -3,6 +3,7 @@
 test_description='checkout should leave clean stat info'
 
 . ./test-lib.sh
+. "$TEST_DIRECTORY"/lib-checkout.sh
 
 test_expect_success 'setup' '
 
@@ -21,13 +22,13 @@ test_expect_success 'branch switching' '
 	git reset --hard &&
 	test "$(git diff-files --raw)" = "" &&
 
-	git checkout master &&
+	checkout_must_succeed master &&
 	test "$(git diff-files --raw)" = "" &&
 
-	git checkout side &&
+	checkout_must_succeed side &&
 	test "$(git diff-files --raw)" = "" &&
 
-	git checkout master &&
+	checkout_must_succeed master &&
 	test "$(git diff-files --raw)" = ""
 
 '
@@ -37,13 +38,13 @@ test_expect_success 'path checkout' '
 	git reset --hard &&
 	test "$(git diff-files --raw)" = "" &&
 
-	git checkout master world &&
+	checkout_must_succeed master world &&
 	test "$(git diff-files --raw)" = "" &&
 
-	git checkout side world &&
+	checkout_must_succeed side world &&
 	test "$(git diff-files --raw)" = "" &&
 
-	git checkout master world &&
+	checkout_must_succeed master world &&
 	test "$(git diff-files --raw)" = ""
 
 '
