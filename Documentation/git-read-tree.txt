@@ -123,6 +123,11 @@ OPTIONS
 	Instead of reading tree object(s) into the index, just empty
 	it.
 
+--recurse-submodules::
+	When this option is given populated submodules will be checked out
+	recursively when used with the -m or -u option. If this option is not
+	given, only the hash recorded in the superproject will be changed.
+
 <tree-ish#>::
 	The id of the tree object(s) to be read/merged.
 

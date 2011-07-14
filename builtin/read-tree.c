@@ -33,7 +33,7 @@ static int list_tree(unsigned char *sha1)
 }
 
 static const char * const read_tree_usage[] = {
-	"git read-tree [[-m [--trivial] [--aggressive] | --reset | --prefix=<prefix>] [-u [--exclude-per-directory=<gitignore>] | -i]] [--no-sparse-checkout] [--index-output=<file>] (--empty | <tree-ish1> [<tree-ish2> [<tree-ish3>]])",
+	"git read-tree [[-m [--trivial] [--aggressive] | --reset | --prefix=<prefix>] [-u [--exclude-per-directory=<gitignore>] | -i]] [--no-sparse-checkout] [--index-output=<file>] [--recurse-submodules] (--empty | <tree-ish1> [<tree-ish2> [<tree-ish3>]])",
 	NULL
 };
 
@@ -135,6 +135,8 @@ int cmd_read_tree(int argc, const char **argv, const char *unused_prefix)
 			    "skip applying sparse checkout filter", 1),
 		OPT_SET_INT(0, "debug-unpack", &opts.debug_unpack,
 			    "debug unpack-trees", 1),
+		OPT_BOOLEAN(0, "recurse-submodules", &opts.recurse_submodules,
+			    "recursively checkout populated submodules"),
 		OPT_END()
 	};
 
@@ -210,6 +212,8 @@ int cmd_read_tree(int argc, const char **argv, const char *unused_prefix)
 
 	if (opts.debug_unpack)
 		opts.fn = debug_merge;
+	if (opts.recurse_submodules && !opts.update && !opts.merge)
+		die("--recurse-submodules is meaningless unless -m or -u");
 
 	cache_tree_free(&active_cache_tree);
 	for (i = 0; i < nr_trees; i++) {
