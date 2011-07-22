@@ -93,6 +93,15 @@ commit or stash your changes before running 'git merge'.
 'git merge --abort' is equivalent to 'git reset --merge' when
 `MERGE_HEAD` is present.
 
+--[no-]recurse-submodules::
+	Since version 1.8.0 the default behavior is to update the work trees
+	of populated submodules recursively according to the merge result.
+	The configured behavior can be overridden on the command line with
+	this option. If --no-recurse-submodules is used, the work trees of
+	submodules will not be updated, only the hash recorded in the
+	superproject will be changed (this was the default behavior until
+	1.8.0).
+
 <commit>...::
 	Commits, usually other branch heads, to merge into our branch.
 	Specifying more than one commit will create a merge with

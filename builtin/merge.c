@@ -48,7 +48,7 @@ static const char * const builtin_merge_usage[] = {
 
 static int show_diffstat = 1, shortlog_len = -1, squash;
 static int option_commit = 1, allow_fast_forward = 1;
-static int fast_forward_only, option_edit = -1;
+static int fast_forward_only, option_edit = -1, recurse_submodules = 1;
 static int allow_trivial = 1, have_message;
 static int overwrite_ignore = 1;
 static struct strbuf merge_msg = STRBUF_INIT;
@@ -206,6 +206,8 @@ static struct option builtin_merge_options[] = {
 	OPT_CALLBACK('m', "message", &merge_msg, "message",
 		"merge commit message (for a non-fast-forward merge)",
 		option_parse_message),
+	OPT_BOOLEAN(0, "recurse-submodules", &recurse_submodules,
+		    "control recursive checkout of submodules"),
 	OPT__VERBOSITY(&verbosity),
 	OPT_BOOLEAN(0, "abort", &abort_current_merge,
 		"abort the current in-progress merge"),
@@ -613,6 +615,7 @@ static int read_tree_trivial(unsigned char *common, unsigned char *head,
 	if (!trees[nr_trees++])
 		return -1;
 	opts.fn = threeway_merge;
+	opts.recurse_submodules = recurse_submodules;
 	cache_tree_free(&active_cache_tree);
 	for (i = 0; i < nr_trees; i++) {
 		parse_tree(trees[i]);
@@ -794,6 +797,7 @@ int checkout_fast_forward(const unsigned char *head, const unsigned char *remote
 	opts.merge = 1;
 	opts.fn = twoway_merge;
 	setup_unpack_trees_porcelain(&opts, "merge");
+	opts.recurse_submodules = recurse_submodules;
 
 	trees[nr_trees] = parse_tree_indirect(head);
 	if (!trees[nr_trees++])

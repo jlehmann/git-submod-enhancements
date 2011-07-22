@@ -229,7 +229,7 @@ then
 Warning: fast-forwarding your working tree from
 Warning: commit \$orig_head." >&2
 	git update-index -q --refresh
-	git read-tree -u -m "$orig_head" "$curr_head" ||
+	git read-tree $recurse_submodules -u -m "$orig_head" "$curr_head" ||
 		die "$(eval_gettext "Cannot fast-forward your working tree.
 After making sure that you saved anything precious from
 $ git diff \$orig_head
@@ -262,7 +262,7 @@ esac
 if test -z "$orig_head"
 then
 	git update-ref -m "initial pull" HEAD $merge_head "$curr_head" &&
-	git read-tree -m -u HEAD || exit 1
+	git read-tree $recurse_submodules -m -u HEAD || exit 1
 	exit
 fi
 
@@ -284,7 +284,7 @@ true)
 *)
 	eval="git-merge $diffstat $no_commit $edit $squash $no_ff $ff_only"
 	eval="$eval  $log_arg $strategy_args $merge_args $verbosity $progress"
-	eval="$eval \"\$merge_name\" HEAD $merge_head"
+	eval="$eval $recurse_submodules \"\$merge_name\" HEAD $merge_head"
 	;;
 esac
 eval "exec $eval"

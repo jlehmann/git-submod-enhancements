@@ -70,7 +70,7 @@ test_expect_success '"git submodule sync" should update submodule URLs' '
 
 test_expect_success '"git submodule sync" should update known submodule URLs' '
 	(cd empty-clone &&
-	 git pull &&
+	 git pull --no-recurse-submodules &&
 	 git submodule sync &&
 	 test -d "$(git config submodule.submodule.url)"
 	)
@@ -78,7 +78,7 @@ test_expect_success '"git submodule sync" should update known submodule URLs' '
 
 test_expect_success '"git submodule sync" should not vivify uninteresting submodule' '
 	(cd top-only-clone &&
-	 git pull &&
+	 git pull --no-recurse-submodules &&
 	 git submodule sync &&
 	 test -z "$(git config submodule.submodule.url)" &&
 	 git submodule sync submodule &&
