@@ -41,6 +41,14 @@ then
 		" remove from \"$git_dir/config\" to use $0"
 fi
 
+# don't link to a repository that has core.worktree defined
+coreworktree=$(git --git-dir="$git_dir" config --get core.worktree)
+if test -n "$coreworktree"
+then
+	die "\"$git_dir\" has core.worktree set to \"$coreworktree\"," \
+		" remove from \"$git_dir/config\" to use $0"
+fi
+
 # don't link to a workdir
 if test -h "$git_dir/config"
 then
