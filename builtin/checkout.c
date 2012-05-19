@@ -35,6 +35,7 @@ struct checkout_opts {
 	int writeout_stage;
 	int writeout_error;
 	int overwrite_ignore;
+	int recurse_submodules;
 
 	/* not set by parse_options */
 	int branch_exists;
@@ -280,6 +281,7 @@ static int checkout_paths(struct tree *source_tree, const char **pathspec,
 	memset(&state, 0, sizeof(state));
 	state.force = 1;
 	state.refresh_cache = 1;
+	state.recurse_submodules = opts->recurse_submodules;
 	for (pos = 0; pos < active_nr; pos++) {
 		struct cache_entry *ce = active_cache[pos];
 		if (source_tree && !(ce->ce_flags & CE_UPDATE))
@@ -346,6 +348,7 @@ static int reset_tree(struct tree *tree, struct checkout_opts *o, int worktree)
 	opts.verbose_update = !o->quiet;
 	opts.src_index = &the_index;
 	opts.dst_index = &the_index;
+	opts.recurse_submodules = o->recurse_submodules;
 	parse_tree(tree);
 	init_tree_desc(&tree_desc, tree->buffer, tree->size);
 	switch (unpack_trees(1, &tree_desc, &opts)) {
@@ -427,6 +430,7 @@ static int merge_working_tree(struct checkout_opts *opts,
 			topts.dir->flags |= DIR_SHOW_IGNORED;
 			setup_standard_excludes(topts.dir);
 		}
+		topts.recurse_submodules = opts->recurse_submodules;
 		tree = parse_tree_indirect(old->commit ?
 					   old->commit->object.sha1 :
 					   EMPTY_TREE_SHA1_BIN);
@@ -954,10 +958,13 @@ int cmd_checkout(int argc, const char **argv, const char *prefix)
 		{ OPTION_BOOLEAN, 0, "guess", &dwim_new_local_branch, NULL,
 		  "second guess 'git checkout no-such-branch'",
 		  PARSE_OPT_NOARG | PARSE_OPT_HIDDEN },
+		OPT_BOOLEAN(0, "recurse-submodules", &opts.recurse_submodules,
+			    "control recursive checkout of submodules"),
 		OPT_END(),
 	};
 
 	memset(&opts, 0, sizeof(opts));
+	opts.recurse_submodules = 1;
 	memset(&new, 0, sizeof(new));
 	opts.overwrite_ignore = 1;
 

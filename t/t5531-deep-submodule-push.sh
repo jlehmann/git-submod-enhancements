@@ -131,7 +131,7 @@ test_expect_success 'push unpushed submodules when not needed' '
 			git push &&
 			git rev-parse origin/master >../../../expected
 		) &&
-		git checkout master &&
+		git checkout --no-recurse-submodules master &&
 		git add gar/bage &&
 		git commit -m "Fifth commit for gar/bage" &&
 		git push --recurse-submodules=on-demand ../pub.git master

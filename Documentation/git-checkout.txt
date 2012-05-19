@@ -186,6 +186,14 @@ This means that you can use `git checkout -p` to selectively discard
 edits from your current working tree. See the ``Interactive Mode''
 section of linkgit:git-add[1] to learn how to operate the `--patch` mode.
 
+--[no-]recurse-submodules::
+	Since version 1.8.0 the default behavior is to checkout populated
+	submodules recursively. The configured behavior can be overridden
+	on the command line with this option. If --no-recurse-submodules is
+	used, the work trees of submodules will not be updated, only the hash
+	recorded in the superproject will be changed (this was the default
+	behavior until 1.8.0).
+
 <branch>::
 	Branch to checkout; if it refers to a branch (i.e., a name that,
 	when prepended with "refs/heads/", is a valid ref), then that

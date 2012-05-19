@@ -124,7 +124,7 @@ test_expect_success 'merge with one side as a fast-forward of the other' '
 
 test_expect_success 'merging should conflict for non fast-forward' '
 	(cd merge-search &&
-	 git checkout -b test-nonforward b &&
+	 git checkout --no-recurse-submodules -b test-nonforward b &&
 	 (cd sub &&
 	  git rev-parse sub-d > ../expect) &&
 	 test_must_fail git merge c 2> actual  &&
@@ -165,7 +165,7 @@ test_expect_success 'merging should fail for ambiguous common parent' '
 #
 test_expect_success 'merging should fail for changes that are backwards' '
 	(cd merge-search &&
-	git checkout -b bb a &&
+	git checkout --no-recurse-submodules -b bb a &&
 	(cd sub &&
 	 git checkout sub-b) &&
 	git commit -a -m "bb" &&

@@ -626,7 +626,7 @@ test_expect_success 'submodule rebase -i' '
 
 test_expect_success 'submodule conflict setup' '
 	git tag submodule-base &&
-	git checkout HEAD^ &&
+	git checkout --no-recurse-submodules HEAD^ &&
 	(
 		cd sub && git checkout HEAD^ && echo 4 >elif &&
 		git add elif && git commit -m "submodule conflict"
@@ -654,7 +654,7 @@ test_expect_success 'rebase -i continue with unstaged submodule' '
 '
 
 test_expect_success 'avoid unnecessary reset' '
-	git checkout master &&
+	git checkout --no-recurse-submodules master &&
 	git reset --hard &&
 	test-chmtime =123456789 file3 &&
 	git update-index --refresh &&

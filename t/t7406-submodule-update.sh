@@ -381,7 +381,7 @@ test_expect_success 'submodule update continues after checkout error' '
 	 (cd submodule &&
 	  echo "" > file
 	 ) &&
-	 git checkout HEAD^ &&
+	 git checkout --no-recurse-submodules HEAD^ &&
 	 test_must_fail git submodule update &&
 	 (cd submodule2 &&
 	  git rev-parse --max-count=1 HEAD > ../actual
@@ -392,7 +392,7 @@ test_expect_success 'submodule update continues after checkout error' '
 test_expect_success 'submodule update continues after recursive checkout error' '
 	(cd super &&
 	 git reset --hard HEAD &&
-	 git checkout master &&
+	 git checkout --no-recurse-submodules master &&
 	 git submodule update &&
 	 (cd submodule &&
 	  git submodule add ../submodule subsubmodule &&
@@ -419,9 +419,9 @@ test_expect_success 'submodule update continues after recursive checkout error' 
 	 git add submodule &&
 	 git add submodule2 &&
 	 git commit -m "new_commits" &&
-	 git checkout HEAD^ &&
+	 git checkout --no-recurse-submodules HEAD^ &&
 	 (cd submodule &&
-	  git checkout HEAD^ &&
+	  git checkout --no-recurse-submodules HEAD^ &&
 	  (cd subsubmodule &&
 	   echo "" > file
 	  )
@@ -436,7 +436,7 @@ test_expect_success 'submodule update continues after recursive checkout error' 
 
 test_expect_success 'submodule update exit immediately in case of merge conflict' '
 	(cd super &&
-	 git checkout master &&
+	 git checkout --no-recurse-submodules master &&
 	 git reset --hard HEAD &&
 	 (cd submodule &&
 	  (cd subsubmodule &&
@@ -454,11 +454,11 @@ test_expect_success 'submodule update exit immediately in case of merge conflict
 	 git add submodule2 &&
 	 git commit -m "two_new_submodule_commits" &&
 	 (cd submodule &&
-	  git checkout master &&
+	  git checkout --no-recurse-submodules master &&
 	  test_commit "conflict" file &&
 	  echo "conflict" > file
 	 ) &&
-	 git checkout HEAD^ &&
+	 git checkout --no-recurse-submodules HEAD^ &&
 	 (cd submodule2 &&
 	  git rev-parse --max-count=1 HEAD > ../expect
 	 ) &&
@@ -473,7 +473,7 @@ test_expect_success 'submodule update exit immediately in case of merge conflict
 
 test_expect_success 'submodule update exit immediately after recursive rebase error' '
 	(cd super &&
-	 git checkout master &&
+	 git checkout --no-recurse-submodules master &&
 	 git reset --hard HEAD &&
 	 (cd submodule &&
 	  git reset --hard HEAD &&
@@ -489,11 +489,11 @@ test_expect_success 'submodule update exit immediately after recursive rebase er
 	 git add submodule2 &&
 	 git commit -m "two_new_submodule_commits" &&
 	 (cd submodule &&
-	  git checkout master &&
+	  git checkout --no-recurse-submodules master &&
 	  test_commit "conflict2" file &&
 	  echo "conflict" > file
 	 ) &&
-	 git checkout HEAD^ &&
+	 git checkout --no-recurse-submodules HEAD^ &&
 	 (cd submodule2 &&
 	  git rev-parse --max-count=1 HEAD > ../expect
 	 ) &&
