@@ -3,6 +3,7 @@
 
 struct diff_options;
 struct argv_array;
+struct option;
 
 enum {
 	RECURSE_SUBMODULES_ON_DEMAND = -1,
@@ -22,6 +23,8 @@ int parse_submodule_config_option(const char *var, const char *value);
 void handle_ignore_submodules_arg(struct diff_options *diffopt, const char *);
 int parse_fetch_recurse_submodules_arg(const char *opt, const char *arg);
 int parse_update_recurse_submodules_arg(const char *opt, const char *arg);
+int option_parse_update_submodules(const struct option *opt,
+		const char *arg, int unset);
 int submodule_needs_update(const char *path);
 int populate_submodule(const char *path, unsigned char sha1[20], int force);
 int depopulate_submodule(const char *path);

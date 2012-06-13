@@ -223,6 +223,14 @@ This means that you can use `git checkout -p` to selectively discard
 edits from your current working tree. See the ``Interactive Mode''
 section of linkgit:git-add[1] to learn how to operate the `--patch` mode.
 
+--[no-]recurse-submodules::
+	Using --recurse-submodules will update the content of all initialized
+	submodules according to the commit recorded in the superproject.If
+	local modifications in a submodule would be overwritten the checkout
+	will fail until `-f` is used. If nothing (or --no-recurse-submodules)
+	is used, the work trees of submodules will not be updated, only the
+	hash recorded in the superproject will be changed.
+
 <branch>::
 	Branch to checkout; if it refers to a branch (i.e., a name that,
 	when prepended with "refs/heads/", is a valid ref), then that
