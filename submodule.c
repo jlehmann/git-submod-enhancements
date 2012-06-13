@@ -398,6 +398,20 @@ int parse_update_recurse_submodules_arg(const char *opt, const char *arg)
 	}
 }
 
+int option_parse_update_submodules(const struct option *opt,
+				   const char *arg, int unset)
+{
+	if (unset) {
+		*(int *)opt->value = RECURSE_SUBMODULES_OFF;
+	} else {
+		if (arg)
+			*(int *)opt->value = parse_update_recurse_submodules_arg(opt->long_name, arg);
+		else
+			*(int *)opt->value = RECURSE_SUBMODULES_ON;
+	}
+	return 0;
+}
+
 int submodule_needs_update(const char *path)
 {
 	struct string_list_item *path_option;
