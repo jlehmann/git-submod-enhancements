@@ -3,6 +3,7 @@
 
 struct diff_options;
 struct argv_array;
+struct option;
 
 enum {
 	RECURSE_SUBMODULES_ON_DEMAND = -1,
@@ -22,12 +23,17 @@ void gitmodules_config(void);
 int parse_submodule_config_option(const char *var, const char *value);
 void handle_ignore_submodules_arg(struct diff_options *diffopt, const char *);
 int parse_fetch_recurse_submodules_arg(const char *opt, const char *arg);
+int parse_update_recurse_submodules_arg(const char *opt, const char *arg);
+int option_parse_update_submodules(const struct option *opt,
+		const char *arg, int unset);
+int submodule_needs_update(const char *path);
 void show_submodule_summary(FILE *f, const char *path,
 		const char *line_prefix,
 		unsigned char one[20], unsigned char two[20],
 		unsigned dirty_submodule, const char *meta,
 		const char *del, const char *add, const char *reset);
 void set_config_fetch_recurse_submodules(int value);
+void set_config_update_recurse_submodules(int default_value, int option_value);
 void check_for_new_submodule_commits(unsigned char new_sha1[20]);
 int fetch_populated_submodules(const struct argv_array *options,
 			       const char *prefix, int command_line_option,
