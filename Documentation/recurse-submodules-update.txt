@@ -1,0 +1,7 @@
+--[no-]recurse-submodules::
+	Using --recurse-submodules will update the content of all initialized
+	submodules according to the commit recorded in the superproject.If
+	local modifications in a submodule would be overwritten the checkout
+	will fail until `-f` is used. If nothing (or --no-recurse-submodules)
+	is used, the work trees of submodules will not be updated, only the
+	hash recorded in the superproject will be changed.
