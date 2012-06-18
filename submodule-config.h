@@ -13,12 +13,14 @@ struct submodule {
 	const char *name;
 	const char *url;
 	int fetch_recurse;
+	int update_recurse;
 	const char *ignore;
 	/* the sha1 blob id of the responsible .gitmodules file */
 	unsigned char gitmodules_sha1[20];
 };
 
 int parse_fetch_recurse_submodules_arg(const char *opt, const char *arg);
+int parse_update_recurse_submodules_arg(const char *opt, const char *arg);
 int parse_submodule_config_option(const char *var, const char *value);
 const struct submodule *submodule_from_name(const unsigned char *commit_sha1,
 		const char *name);

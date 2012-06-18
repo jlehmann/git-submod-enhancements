@@ -228,6 +228,27 @@ int parse_fetch_recurse_submodules_arg(const char *opt, const char *arg)
 	return parse_fetch_recurse(opt, arg, 1);
 }
 
+static int parse_update_recurse(const char *opt, const char *arg,
+				int die_on_error)
+{
+	switch (git_config_maybe_bool(opt, arg)) {
+	case 1:
+		return RECURSE_SUBMODULES_ON;
+	case 0:
+		return RECURSE_SUBMODULES_OFF;
+	default:
+		if (die_on_error)
+			die("bad %s argument: %s", opt, arg);
+		else
+			return RECURSE_SUBMODULES_ERROR;
+	}
+}
+
+int parse_update_recurse_submodules_arg(const char *opt, const char *arg)
+{
+	return parse_update_recurse(opt, arg, 1);
+}
+
 static void warn_multiple_config(const unsigned char *commit_sha1,
 				 const char *name, const char *option)
 {
@@ -285,6 +306,17 @@ static int parse_config(const char *var, const char *value, void *data)
 			submodule->fetch_recurse = parse_fetch_recurse(
 								var, value,
 								die_on_error);
+	} else if (!strcmp(item.buf, "autoupdate")) {
+		/* when parsing worktree configurations we can die early */
+		int die_on_error = is_null_sha1(me->gitmodules_sha1);
+		if (!me->overwrite &&
+		    submodule->update_recurse != RECURSE_SUBMODULES_NONE) {
+			warn_multiple_config(me->commit_sha1, submodule->name,
+					     "autoupdate");
+		} else
+			submodule->update_recurse = parse_update_recurse(var,
+									 value,
+									 die_on_error);
 	} else if (!strcmp(item.buf, "ignore")) {
 		if (!value)
 			ret = config_error_nonbool(var);

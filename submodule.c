@@ -13,7 +13,28 @@
 #include "argv-array.h"
 #include "blob.h"
 
+/*
+ * When no --recurse-submodules option was passed, should git fetch
+ * from submodules where submodule.<name>.fetchRecurseSubmodules doesn't
+ * indicate what to do?
+ *
+ * Controlled by fetch.recurseSubmodules.  The default is determined by
+ * the --recurse-submodules-default option, which propagates
+ * --recurse-submodules from the parent git process when recursing.
+ */
 static int config_fetch_recurse_submodules = RECURSE_SUBMODULES_ON_DEMAND;
+
+/*
+ * When no --recurse-submodules option was passed, should git update the
+ * index and worktree within submodules (and in turn their submodules,
+ * etc)?
+ *
+ * Controlled by the --recurse-submodules-default option, which propagates
+ * --recurse-submodules from the parent git process when recursing.
+ */
+static int config_update_recurse_submodules = RECURSE_SUBMODULES_OFF;
+
+static int option_update_recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 static struct string_list changed_submodule_paths;
 static int initialized_fetch_ref_tips;
 static struct sha1_array ref_tips_before_fetch;
@@ -283,6 +304,37 @@ static void print_submodule_summary(struct rev_info *rev, FILE *f,
 	strbuf_release(&sb);
 }
 
+int option_parse_update_submodules(const struct option *opt,
+				   const char *arg, int unset)
+{
+	if (unset) {
+		*(int *)opt->value = RECURSE_SUBMODULES_OFF;
+	} else if (arg) {
+		*(int *)opt->value = parse_update_recurse_submodules_arg(opt->long_name, arg);
+	} else {
+		*(int *)opt->value = RECURSE_SUBMODULES_ON;
+	}
+	return 0;
+}
+
+int submodule_needs_update(const char *path, const unsigned char sha1[20])
+{
+	const struct submodule *submodule;
+
+	if (option_update_recurse_submodules != RECURSE_SUBMODULES_DEFAULT)
+		return option_update_recurse_submodules == RECURSE_SUBMODULES_ON;
+
+	submodule = submodule_from_path(null_sha1, path);
+	if (submodule && submodule->update_recurse != RECURSE_SUBMODULES_NONE)
+		/* local config overrules everything except commandline */
+		return submodule->update_recurse == RECURSE_SUBMODULES_ON;
+
+	if (is_null_sha1(sha1) && gitmodules_is_unmerged)
+		return RECURSE_SUBMODULES_OFF;
+
+	return config_update_recurse_submodules == RECURSE_SUBMODULES_ON;
+}
+
 void show_submodule_summary(FILE *f, const char *path,
 		const char *line_prefix,
 		unsigned char one[20], unsigned char two[20],
@@ -484,6 +536,12 @@ int push_unpushed_submodules(unsigned char new_sha1[20], const char *remotes_nam
 	string_list_clear(&needs_pushing, 0);
 
 	return ret;
+}
+
+void set_config_update_recurse_submodules(int default_value, int option_value)
+{
+	config_update_recurse_submodules = default_value;
+	option_update_recurse_submodules = option_value;
 }
 
 static int is_submodule_commit_present(const char *path, unsigned char sha1[20])

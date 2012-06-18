@@ -3,6 +3,7 @@
 
 struct diff_options;
 struct argv_array;
+struct option;
 
 enum {
 	RECURSE_SUBMODULES_ERROR = -3,
@@ -22,12 +23,16 @@ void set_diffopt_flags_from_submodule_config(struct diff_options *diffopt,
 int submodule_config(const char *var, const char *value, void *cb);
 void gitmodules_config(void);
 void handle_ignore_submodules_arg(struct diff_options *diffopt, const char *);
+int option_parse_update_submodules(const struct option *opt,
+		const char *arg, int unset);
+int submodule_needs_update(const char *path, const unsigned char sha1[29]);
 void show_submodule_summary(FILE *f, const char *path,
 		const char *line_prefix,
 		unsigned char one[20], unsigned char two[20],
 		unsigned dirty_submodule, const char *meta,
 		const char *del, const char *add, const char *reset);
 void set_config_fetch_recurse_submodules(int value);
+void set_config_update_recurse_submodules(int default_value, int option_value);
 void check_for_new_submodule_commits(unsigned char new_sha1[20]);
 int fetch_populated_submodules(const struct argv_array *options,
 			       const char *prefix, int command_line_option,
