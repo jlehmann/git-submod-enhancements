@@ -380,6 +380,42 @@ int submodule_needs_update(const char *path)
 	return config_update_recurse_submodules != RECURSE_SUBMODULES_OFF;
 }
 
+int populate_submodule(const char *path, unsigned char sha1[20], int force)
+{
+	struct string_list_item *path_option;
+	const char *name, *real_git_dir;
+	struct strbuf buf = STRBUF_INIT;
+	struct child_process cp;
+	const char *argv[] = {"read-tree", force ? "--reset" : "-m", "-u", NULL, NULL};
+
+	path_option = unsorted_string_list_lookup(&config_name_for_path, path);
+	if (!path_option)
+		return 0;
+
+	name = path_option->util;
+
+	strbuf_addf(&buf, "%s/modules/%s", resolve_gitdir(get_git_dir()), name);
+	real_git_dir = resolve_gitdir(buf.buf);
+	if (!real_git_dir)
+		goto out;
+	connect_work_tree_and_git_dir(path, real_git_dir);
+
+	/* Run read-tree --reset sha1 */
+	memset(&cp, 0, sizeof(cp));
+	cp.argv = argv;
+	cp.env = local_repo_env;
+	cp.git_cmd = 1;
+	cp.no_stdin = 1;
+	cp.dir = path;
+	argv[3] = sha1_to_hex(sha1);
+	if (run_command(&cp))
+		warning(_("Checking out submodule %s failed"), path);
+
+out:
+	strbuf_release(&buf);
+	return 0;
+}
+
 int depopulate_submodule(const char *path)
 {
 	struct strbuf dot_git = STRBUF_INIT;
@@ -1180,15 +1216,17 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 	struct strbuf configfile_name = STRBUF_INIT;
 	struct strbuf gitfile_content = STRBUF_INIT;
 	struct strbuf gitfile_name = STRBUF_INIT;
+	const char *real_git_dir = xstrdup(real_path(git_dir));
 	const char *real_work_tree = real_path(work_tree);
-	const char *pathspec[] = { real_work_tree, git_dir, NULL };
+	const char *pathspec[] = { real_work_tree, real_git_dir, NULL };
 	const char *max_prefix = common_prefix(pathspec);
 	FILE *fp;
 
+	git_dir = real_git_dir;
 	if (max_prefix) {       /* skip common prefix */
 		size_t max_prefix_len = strlen(max_prefix);
 		real_work_tree += max_prefix_len;
-		git_dir += max_prefix_len;
+		real_git_dir += max_prefix_len;
 	}
 
 	/*
@@ -1202,7 +1240,7 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 			s++;
 		} while ((s = strchr(s, '/')));
 	}
-	strbuf_addstr(&gitfile_content, git_dir);
+	strbuf_addstr(&gitfile_content, real_git_dir);
 	strbuf_addch(&gitfile_content, '\n');
 
 	strbuf_addf(&gitfile_name, "%s/.git", work_tree);
@@ -1218,8 +1256,8 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 	/*
 	 * Update core.worktree setting
 	 */
-	if (git_dir[0]) {
-		const char *s = git_dir;
+	if (real_git_dir[0]) {
+		const char *s = real_git_dir;
 		do {
 			strbuf_addstr(&core_worktree_setting, "../");
 			s++;
@@ -1227,7 +1265,7 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 	}
 	strbuf_addstr(&core_worktree_setting, real_work_tree);
 
-	strbuf_addf(&configfile_name, "%s/config", git_dir);
+	strbuf_addf(&configfile_name, "%s/config", real_git_dir);
 	if (git_config_set_in_file(configfile_name.buf, "core.worktree",
 				   core_worktree_setting.buf))
 		die(_("Could not set core.worktree in %s"),
@@ -1235,4 +1273,5 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 
 	strbuf_release(&core_worktree_setting);
 	strbuf_release(&configfile_name);
+	free((char *)git_dir);
 }

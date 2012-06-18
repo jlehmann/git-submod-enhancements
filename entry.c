@@ -2,6 +2,7 @@
 #include "blob.h"
 #include "dir.h"
 #include "streaming.h"
+#include "submodule.h"
 
 static void create_directories(const char *path, int path_len,
 			       const struct checkout *state)
@@ -202,6 +203,9 @@ static int write_entry(struct cache_entry *ce, char *path, const struct checkout
 			return error("cannot create temporary subproject %s", path);
 		if (mkdir(path, 0777) < 0)
 			return error("cannot create subproject directory %s", path);
+		if (submodule_needs_update(path) &&
+		    populate_submodule(path, ce->sha1, state->force))
+			return error("cannot checkout submodule %s", path);
 		break;
 	default:
 		return error("unknown file mode for %s in index", path);
