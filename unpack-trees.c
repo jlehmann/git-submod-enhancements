@@ -8,6 +8,7 @@
 #include "progress.h"
 #include "refs.h"
 #include "attr.h"
+#include "submodule.h"
 
 /*
  * Error messages expected by scripts out of plumbing commands such as
@@ -1259,14 +1260,13 @@ static void invalidate_ce_path(struct cache_entry *ce, struct unpack_trees_optio
 /*
  * Check that checking out ce->sha1 in subdir ce->name is not
  * going to overwrite any working files.
- *
- * Currently, git does not checkout subprojects during a superproject
- * checkout, so it is not going to overwrite anything.
  */
 static int verify_clean_submodule(struct cache_entry *ce,
 				      enum unpack_trees_error_types error_type,
 				      struct unpack_trees_options *o)
 {
+	if (submodule_needs_update(ce->name) && is_submodule_modified(ce->name, 0))
+		return 1;
 	return 0;
 }
 
