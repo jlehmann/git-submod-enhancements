@@ -43,6 +43,7 @@ test_expect_success 'setup - hide init subdirectory' '
 
 test_expect_success 'setup - repository to add submodules to' '
 	git init addtest &&
+	git init addtest-crlf &&
 	git init addtest-ignore
 '
 
@@ -96,6 +97,18 @@ test_expect_success 'submodule add' '
 	test_cmp expect heads &&
 	test_cmp expect head &&
 	test_cmp empty untracked
+'
+
+test_expect_failure 'submodule add with core.autocrlf and core.safecrlf' '
+	(
+		cd addtest-crlf &&
+		git config core.autocrlf true &&
+		git config core.safecrlf true &&
+		git submodule add "$submodurl" submod &&
+		echo ".gitmodules" >expect &&
+		git ls-files -- .gitmodules >actual &&
+		test_cmp expect actual
+	)
 '
 
 test_expect_success 'submodule add to .gitignored path fails' '
