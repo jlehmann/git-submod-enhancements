@@ -86,7 +86,7 @@ static char *fixup_message, *squash_message;
 static int all, also, interactive, patch_interactive, only, amend, signoff;
 static int edit_flag = -1; /* unspecified */
 static int quiet, verbose, no_verify, allow_empty, dry_run, renew_authorship;
-static int no_post_rewrite, allow_empty_message;
+static int no_post_rewrite, allow_empty_message, ignore_submodules;
 static char *untracked_files_arg, *force_date, *ignore_submodule_arg;
 static char *sign_commit;
 
@@ -278,6 +278,8 @@ static char *prepare_index(int argc, const char **argv, const char *prefix,
 
 	if (is_status)
 		refresh_flags |= REFRESH_UNMERGED;
+	if (ignore_submodules)
+		refresh_flags |= REFRESH_IGNORE_SUBMODULES;
 
 	if (*argv)
 		pathspec = get_pathspec(prefix, argv);
@@ -1285,6 +1287,10 @@ static void print_summary(const char *prefix, const unsigned char *sha1,
 	rev.diff = 1;
 	rev.diffopt.output_format =
 		DIFF_FORMAT_SHORTSTAT | DIFF_FORMAT_SUMMARY;
+	if (ignore_submodules) {
+		DIFF_OPT_SET(&rev.diffopt, OVERRIDE_SUBMODULE_CONFIG);
+		handle_ignore_submodules_arg(&rev.diffopt, "all");
+	}
 
 	rev.verbose_header = 1;
 	rev.show_root_diff = 1;
@@ -1408,6 +1414,7 @@ int cmd_commit(int argc, const char **argv, const char *prefix)
 		OPT_BOOLEAN(0, "amend", &amend, "amend previous commit"),
 		OPT_BOOLEAN(0, "no-post-rewrite", &no_post_rewrite, "bypass post-rewrite hook"),
 		{ OPTION_STRING, 'u', "untracked-files", &untracked_files_arg, "mode", "show untracked files, optional modes: all, normal, no. (Default: all)", PARSE_OPT_OPTARG, NULL, (intptr_t)"all" },
+		OPT_BOOLEAN(0, "ignore-submodules", &ignore_submodules, "ignore changes in submodules"),
 		/* end commit contents options */
 
 		{ OPTION_BOOLEAN, 0, "allow-empty", &allow_empty, NULL,
