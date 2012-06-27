@@ -1163,7 +1163,7 @@ static int git_status_config(const char *k, const char *v, void *cb)
 int cmd_status(int argc, const char **argv, const char *prefix)
 {
 	static struct wt_status s;
-	int fd;
+	int fd, refresh_flags = REFRESH_QUIET|REFRESH_UNMERGED;
 	unsigned char sha1[20];
 	static struct option builtin_status_options[] = {
 		OPT__VERBOSE(&verbose, "be verbose"),
@@ -1211,7 +1211,9 @@ int cmd_status(int argc, const char **argv, const char *prefix)
 		s.pathspec = get_pathspec(prefix, argv);
 
 	read_cache_preload(s.pathspec);
-	refresh_index(&the_index, REFRESH_QUIET|REFRESH_UNMERGED, s.pathspec, NULL, NULL);
+	if (!ignore_submodule_arg || !strcmp(ignore_submodule_arg, "all"))
+		refresh_flags |= REFRESH_IGNORE_SUBMODULES;
+	refresh_index(&the_index, refresh_flags, s.pathspec, NULL, NULL);
 
 	fd = hold_locked_index(&index_lock, 0);
 	if (0 <= fd)

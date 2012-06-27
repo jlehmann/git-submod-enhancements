@@ -520,7 +520,7 @@ test_expect_success 'moving the superproject does not break submodules' '
 	)
 '
 
-test_expect_success 'broken gitlink fails diff unless submodule is ignored' '
+test_expect_success 'broken gitlink fails diff & status unless submodule is ignored' '
 	git submodule update &&
 	mv init/.git init/.git.orig &&
 	echo "gitdir: nowhere" >init/.git &&
@@ -530,11 +530,15 @@ test_expect_success 'broken gitlink fails diff unless submodule is ignored' '
 	test_cmp expect actual &&
 	test_must_fail git diff-files 2>actual &&
 	test_cmp expect actual &&
+	test_must_fail git status 2>actual &&
+	test_cmp expect actual &&
 	git diff --ignore-submodules &&
 	git diff-files --ignore-submodules &&
+	git status --ignore-submodules &&
 	git config -f .gitmodules submodule.example.ignore all &&
 	git diff &&
 	git diff-files &&
+	git status &&
 	git config -f .gitmodules --unset submodule.example.ignore &&
 	mv init/.git.orig init/.git
 '
