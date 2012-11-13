@@ -99,7 +99,7 @@ test_expect_success 'submodule add' '
 	test_cmp empty untracked
 '
 
-test_expect_failure 'submodule add with core.autocrlf and core.safecrlf' '
+test_expect_success 'submodule add with core.autocrlf and core.safecrlf' '
 	(
 		cd addtest-crlf &&
 		git config core.autocrlf true &&
