@@ -1273,7 +1273,6 @@ static enum path_treatment treat_one_path(struct dir_struct *dir,
 		return path_ignored;
 	case DT_DIR:
 		strbuf_addch(path, '/');
-
 		switch (treat_directory(dir, path->buf, path->len, exclude, simplify)) {
 		case show_directory:
 			break;
@@ -1343,8 +1342,7 @@ static int read_directory_recursive(struct dir_struct *dir,
 		switch (treat_path(dir, de, &path, baselen, simplify)) {
 		case path_recurse:
 			contents += read_directory_recursive(dir, path.buf,
-							     path.len, 0,
-							     simplify);
+				path.len, check_only, simplify);
 			continue;
 		case path_ignored:
 			continue;
