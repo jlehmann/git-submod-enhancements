@@ -304,6 +304,47 @@ test_expect_success 'git mv moves a submodule with gitfile' '
 		cd mod/sub &&
 		git status
 	) &&
+	echo mod/sub >expected &&
+	git config -f .gitmodules submodule.sub.path >actual &&
+	test_cmp expected actual &&
+	git update-index --refresh &&
+	git diff-files --quiet
+'
+
+test_expect_success 'mv does not complain when no .gitmodules file is found' '
+	rm -rf mod/sub &&
+	git reset --hard &&
+	git submodule update &&
+	git rm .gitmodules &&
+	entry="$(git ls-files --stage sub | cut -f 1)" &&
+	git mv sub mod/sub 2>actual.err &&
+	! test -s actual.err &&
+	! test -e sub &&
+	test "$entry" = "$(git ls-files --stage mod/sub | cut -f 1)" &&
+	(
+		cd mod/sub &&
+		git status
+	) &&
+	git update-index --refresh &&
+	git diff-files --quiet
+'
+
+test_expect_success 'mv issues a warning when section is not found in .gitmodules' '
+	rm -rf mod/sub &&
+	git reset --hard &&
+	git submodule update &&
+	git config -f .gitmodules --remove-section submodule.sub &&
+	git add .gitmodules &&
+	entry="$(git ls-files --stage sub | cut -f 1)" &&
+	echo "warning: Could not find section in .gitmodules where path=sub" >expect.err &&
+	git mv sub mod/sub 2>actual.err &&
+	test_i18ncmp expect.err actual.err &&
+	! test -e sub &&
+	test "$entry" = "$(git ls-files --stage mod/sub | cut -f 1)" &&
+	(
+		cd mod/sub &&
+		git status
+	) &&
 	git update-index --refresh &&
 	git diff-files --quiet
 '
