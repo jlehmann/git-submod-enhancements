@@ -1001,3 +1001,67 @@ int merge_submodule(unsigned char result[20], const char *path,
 	free(merges.objects);
 	return 0;
 }
+
+/* Update gitfile and core.worktree setting to connect work tree and git dir */
+void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
+{
+	struct strbuf core_worktree_setting = STRBUF_INIT;
+	struct strbuf configfile_name = STRBUF_INIT;
+	struct strbuf gitfile_content = STRBUF_INIT;
+	struct strbuf gitfile_name = STRBUF_INIT;
+	const char *real_work_tree = real_path(work_tree);
+	const char *pathspec[] = { real_work_tree, git_dir, NULL };
+	const char *max_prefix = common_prefix(pathspec);
+	FILE *fp;
+
+	if (max_prefix) {       /* skip common prefix */
+		size_t max_prefix_len = strlen(max_prefix);
+		real_work_tree += max_prefix_len;
+		git_dir += max_prefix_len;
+	}
+
+	/*
+	 * Update gitfile
+	 */
+	strbuf_addstr(&gitfile_content, "gitdir: ");
+	if (real_work_tree[0]) {
+		const char *s = real_work_tree;
+		do {
+			strbuf_addstr(&gitfile_content, "../");
+			s++;
+		} while ((s = strchr(s, '/')));
+	}
+	strbuf_addstr(&gitfile_content, git_dir);
+	strbuf_addch(&gitfile_content, '\n');
+
+	strbuf_addf(&gitfile_name, "%s/.git", work_tree);
+	fp = fopen(gitfile_name.buf, "w");
+	if (!fp)
+		die(_("Could not create git link %s"), gitfile_name.buf);
+	fprintf(fp, "%s", gitfile_content.buf);
+	fclose(fp);
+
+	strbuf_release(&gitfile_content);
+	strbuf_release(&gitfile_name);
+
+	/*
+	 * Update core.worktree setting
+	 */
+	if (git_dir[0]) {
+		const char *s = git_dir;
+		do {
+			strbuf_addstr(&core_worktree_setting, "../");
+			s++;
+		} while ((s = strchr(s, '/')));
+	}
+	strbuf_addstr(&core_worktree_setting, real_work_tree);
+
+	strbuf_addf(&configfile_name, "%s/config", git_dir);
+	if (git_config_set_in_file(configfile_name.buf, "core.worktree",
+				   core_worktree_setting.buf))
+		die(_("Could not set core.worktree in %s"),
+		    configfile_name.buf);
+
+	strbuf_release(&core_worktree_setting);
+	strbuf_release(&configfile_name);
+}
