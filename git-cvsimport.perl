@@ -1126,12 +1126,12 @@ unless ($opt_P) {
 }
 
 # The heuristic of repacking every 1024 commits can leave a
-# lot of unpacked data.  If there is more than 1MB worth of
+# lot of unpacked data.  If there is more than 1MiB worth of
 # not-packed objects, repack once more.
 my $line = `git count-objects`;
-if ($line =~ /^(\d+) objects, (\d+) kilobytes$/) {
-  my ($n_objects, $kb) = ($1, $2);
-  1024 < $kb
+if ($line =~ /^(\d+) objects, (\d+) KiB$/) {
+  my ($n_objects, $kib) = ($1, $2);
+  1024 < $kib
     and system(qw(git repack -a -d));
 }
 

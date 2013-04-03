@@ -49,7 +49,7 @@ cd "$base_dir"
 
 test_expect_success 'that reference gets used with add' \
 'cd super/sub &&
-echo "0 objects, 0 kilobytes" > expected &&
+echo "0 objects, 0 KiB" > expected &&
 git count-objects > current &&
 diff expected current'
 
@@ -72,7 +72,7 @@ cd "$base_dir"
 
 test_expect_success 'that reference gets used with update' \
 'cd super-clone/sub &&
-echo "0 objects, 0 kilobytes" > expected &&
+echo "0 objects, 0 KiB" > expected &&
 git count-objects > current &&
 diff expected current'
 

@@ -46,7 +46,7 @@ cd "$base_dir"
 
 test_expect_success 'that reference gets used' \
 'cd C &&
-echo "0 objects, 0 kilobytes" > expected &&
+echo "0 objects, 0 KiB" > expected &&
 git count-objects > current &&
 test_cmp expected current'
 
@@ -76,7 +76,7 @@ test_expect_success 'pulling from reference' \
 cd "$base_dir"
 
 test_expect_success 'that reference gets used' \
-'cd D && echo "0 objects, 0 kilobytes" > expected &&
+'cd D && echo "0 objects, 0 KiB" > expected &&
 git count-objects > current &&
 test_cmp expected current'
 
