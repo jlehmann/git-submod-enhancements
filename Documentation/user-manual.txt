@@ -3175,7 +3175,7 @@ lot of objects.  Try this on an old project:
 
 ------------------------------------------------
 $ git count-objects
-6930 objects, 47620 kilobytes
+6930 objects, 47620 KiB
 ------------------------------------------------
 
 The first number is the number of objects which are kept in
@@ -3215,7 +3215,7 @@ You can verify that the loose objects are gone by looking at the
 
 ------------------------------------------------
 $ git count-objects
-0 objects, 0 kilobytes
+0 objects, 0 KiB
 ------------------------------------------------
 
 Although the object files are gone, any commands that refer to those

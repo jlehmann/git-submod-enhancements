@@ -20,7 +20,7 @@ test_expect_success \
      commit1=`git commit-tree $tree </dev/null` &&
      git update-ref HEAD $commit1 &&
      git repack -a -d &&
-     test "`git count-objects`" = "0 objects, 0 kilobytes" &&
+     test "`git count-objects`" = "0 objects, 0 KiB" &&
      pack1=`ls .git/objects/pack/*.pack` &&
      test -f "$pack1"'
 
@@ -46,7 +46,7 @@ test_expect_success \
      commit2=`git commit-tree $tree -p $commit1 </dev/null` &&
      git update-ref HEAD $commit2 &&
      git repack -a -d &&
-     test "`git count-objects`" = "0 objects, 0 kilobytes" &&
+     test "`git count-objects`" = "0 objects, 0 KiB" &&
      pack2=`ls .git/objects/pack/*.pack` &&
      test -f "$pack2" &&
      test "$pack1" \!= "$pack2"'

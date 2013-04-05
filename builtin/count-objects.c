@@ -140,7 +140,7 @@ int cmd_count_objects(int argc, const char **argv, const char *prefix)
 		printf("size-garbage: %lu\n", (unsigned long) (size_garbage / 1024));
 	}
 	else
-		printf("%lu objects, %lu kilobytes\n",
+		printf("%lu objects, %lu KiB\n",
 		       loose, (unsigned long) (loose_size / 1024));
 	return 0;
 }
