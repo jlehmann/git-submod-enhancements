@@ -12,6 +12,7 @@ enum {
 };
 
 int update_path_in_gitmodules(const char *oldpath, const char *newpath);
+int remove_path_from_gitmodules(const char *path);
 void stage_updated_gitmodules(void);
 void set_diffopt_flags_from_submodule_config(struct diff_options *diffopt,
 		const char *path);
