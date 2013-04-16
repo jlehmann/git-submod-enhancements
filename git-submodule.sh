@@ -594,27 +594,30 @@ cmd_deinit()
 		die_if_unmatched "$mode"
 		name=$(module_name "$sm_path") || exit
 
-		# Remove the submodule work tree (unless the user already did it)
-		if test -d "$sm_path"
+		# Remove the submodule work tree (unless the user already did it or it is empty)
+		if test ! -d "$(find "$sm_path" -maxdepth 0 -empty)"
 		then
-			# Protect submodules containing a .git directory
-			if test -d "$sm_path/.git"
+			if test -d "$sm_path"
 			then
-				echo >&2 "$(eval_gettext "Submodule work tree '\$sm_path' contains a .git directory")"
-				die "$(eval_gettext "(use 'rm -rf' if you really want to remove it including all of its history)")"
+				# Protect submodules containing a .git directory
+				if test -d "$sm_path/.git"
+				then
+					echo >&2 "$(eval_gettext "Submodule work tree '\$sm_path' contains a .git directory")"
+					die "$(eval_gettext "(use 'rm -rf' if you really want to remove it including all of its history)")"
+				fi
+
+				if test -z "$force"
+				then
+					git rm -qn "$sm_path" ||
+					die "$(eval_gettext "Submodule work tree '\$sm_path' contains local modifications; use '-f' to discard them")"
+				fi
+				rm -rf "$sm_path" &&
+				say "$(eval_gettext "Cleared directory '\$sm_path'")" ||
+				say "$(eval_gettext "Could not remove submodule work tree '\$sm_path'")"
 			fi
 
-			if test -z "$force"
-			then
-				git rm -qn "$sm_path" ||
-				die "$(eval_gettext "Submodule work tree '\$sm_path' contains local modifications; use '-f' to discard them")"
-			fi
-			rm -rf "$sm_path" &&
-			say "$(eval_gettext "Cleared directory '\$sm_path'")" ||
-			say "$(eval_gettext "Could not remove submodule work tree '\$sm_path'")"
+			mkdir "$sm_path" || say "$(eval_gettext "Could not create empty submodule directory '\$sm_path'")"
 		fi
-
-		mkdir "$sm_path" || say "$(eval_gettext "Could not create empty submodule directory '\$sm_path'")"
 
 		# Remove the .git/config entries (unless the user already did it)
 		if test -n "$(git config --get-regexp submodule."$name\.")"
