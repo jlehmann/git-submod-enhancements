@@ -362,6 +362,8 @@ def export_ref(repo, name, kind, head):
         else:
             modified, removed = get_filechanges(repo, c, parents[0])
 
+        desc += '\n'
+
         if mode == 'hg':
             extra_msg = ''
 
@@ -385,7 +387,6 @@ def export_ref(repo, name, kind, head):
                 else:
                     extra_msg += "extra : %s : %s\n" % (key, urllib.quote(value))
 
-            desc += '\n'
             if extra_msg:
                 desc += '\n--HG--\n' + extra_msg
 
