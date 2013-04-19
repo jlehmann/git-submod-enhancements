@@ -219,6 +219,7 @@ int cmd_rm(int argc, const char **argv, const char *prefix)
 	const char **pathspec;
 	char *seen;
 
+	gitmodules_config();
 	git_config(git_default_config, NULL);
 
 	argc = parse_options(argc, argv, prefix, builtin_rm_options,
@@ -334,13 +335,15 @@ int cmd_rm(int argc, const char **argv, const char *prefix)
 	 * in the middle)
 	 */
 	if (!index_only) {
-		int removed = 0;
+		int removed = 0, gitmodules_modified = 0;
 		for (i = 0; i < list.nr; i++) {
 			const char *path = list.entry[i].name;
 			if (list.entry[i].is_submodule) {
 				if (is_empty_dir(path)) {
 					if (!rmdir(path)) {
 						removed = 1;
+						if (!remove_path_from_gitmodules(path))
+							gitmodules_modified = 1;
 						continue;
 					}
 				} else {
@@ -348,9 +351,14 @@ int cmd_rm(int argc, const char **argv, const char *prefix)
 					strbuf_addstr(&buf, path);
 					if (!remove_dir_recursively(&buf, 0)) {
 						removed = 1;
+						if (!remove_path_from_gitmodules(path))
+							gitmodules_modified = 1;
 						strbuf_release(&buf);
 						continue;
-					}
+					} else if (!file_exists(path))
+						/* Submodule was removed by user */
+						if (!remove_path_from_gitmodules(path))
+							gitmodules_modified = 1;
 					strbuf_release(&buf);
 					/* Fallthrough and let remove_path() fail. */
 				}
@@ -362,6 +370,8 @@ int cmd_rm(int argc, const char **argv, const char *prefix)
 			if (!removed)
 				die_errno("git rm: '%s'", path);
 		}
+		if (gitmodules_modified)
+			stage_updated_gitmodules();
 	}
 
 	if (active_cache_changed) {
