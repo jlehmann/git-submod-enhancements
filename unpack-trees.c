@@ -1300,6 +1300,11 @@ static int verify_clean_submodule(struct cache_entry *ce,
 				      enum unpack_trees_error_types error_type,
 				      struct unpack_trees_options *o)
 {
+	unsigned char sha1[20];
+	if (resolve_gitlink_ref(ce->name, "HEAD", sha1))
+		return 0;
+	if (!hashcmp(sha1, ce->sha1))
+		return 0;
 	if (submodule_needs_update(ce->name) && is_submodule_modified(ce->name, 0))
 		return 1;
 	return 0;
@@ -1318,17 +1323,9 @@ static int verify_clean_subdirectory(struct cache_entry *ce,
 	struct dir_struct d;
 	char *pathbuf;
 	int cnt = 0;
-	unsigned char sha1[20];
 
-	if (S_ISGITLINK(ce->ce_mode) &&
-	    resolve_gitlink_ref(ce->name, "HEAD", sha1) == 0) {
-		/* If we are not going to update the submodule, then
-		 * we don't care.
-		 */
-		if (!hashcmp(sha1, ce->sha1))
-			return 0;
+	if (S_ISGITLINK(ce->ce_mode))
 		return verify_clean_submodule(ce, error_type, o);
-	}
 
 	/*
 	 * First let's make sure we do not have a local modification
