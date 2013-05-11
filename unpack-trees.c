@@ -54,6 +54,10 @@ static const char *unpack_plumbing_errors[NB_UNPACK_TREES_ERROR_TYPES] = {
 	  ? ((o)->msgs[(type)])      \
 	  : (unpack_plumbing_errors[(type)]) )
 
+static int verify_clean_subdirectory(struct cache_entry *ce,
+				      enum unpack_trees_error_types error_type,
+				      struct unpack_trees_options *o);
+
 void setup_unpack_trees_porcelain(struct unpack_trees_options *opts,
 				  const char *cmd)
 {
@@ -1210,6 +1214,9 @@ static int verify_uptodate_1(struct cache_entry *ce,
 	if (o->index_only)
 		return 0;
 
+	if (S_ISGITLINK(ce->ce_mode))
+		return verify_clean_subdirectory(ce, error_type, o);
+
 	/*
 	 * CE_VALID and CE_SKIP_WORKTREE cheat, we better check again
 	 * if this entry is truly up-to-date because this file may be
@@ -1223,14 +1230,9 @@ static int verify_uptodate_1(struct cache_entry *ce,
 	if (!lstat(ce->name, &st)) {
 		int flags = CE_MATCH_IGNORE_VALID|CE_MATCH_IGNORE_SKIP_WORKTREE;
 		unsigned changed = ie_match_stat(o->src_index, ce, &st, flags);
-		if (!changed) {
-			if (!S_ISGITLINK(ce->ce_mode) || !submodule_needs_update(ce->name) ||
-			    (ce_stage(ce) ? is_submodule_checkout_safe(ce->name, ce->sha1)
-			    : !is_submodule_modified(ce->name, 1)))
-				return 0;
-		} else
-			if (S_ISGITLINK(ce->ce_mode) && !submodule_needs_update(ce->name))
-				return 0;
+
+		if (!changed)
+			return 0;
 
 		errno = 0;
 	}
