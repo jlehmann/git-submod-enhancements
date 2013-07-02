@@ -1228,6 +1228,7 @@ static int verify_uptodate_1(const struct cache_entry *ce,
 	if (!lstat(ce->name, &st)) {
 		int flags = CE_MATCH_IGNORE_VALID|CE_MATCH_IGNORE_SKIP_WORKTREE;
 		unsigned changed = ie_match_stat(o->src_index, ce, &st, flags);
+printf("WOOF!\n");
 		if (!changed)
 			return 0;
 		/*
@@ -1237,6 +1238,7 @@ static int verify_uptodate_1(const struct cache_entry *ce,
 		 * submodules that are marked to be automatically
 		 * checked out.
 		 */
+printf("ZONK!\n");
 		if (S_ISGITLINK(ce->ce_mode))
 			return 0;
 		errno = 0;
@@ -1280,6 +1282,7 @@ static int verify_clean_submodule(const struct cache_entry *ce,
 				  struct unpack_trees_options *o)
 {
 	unsigned char sha1[20];
+printf("PLONK!\n");
 	if (!resolve_gitlink_ref(ce->name, "HEAD", sha1) &&
 	    !hashcmp(sha1, ce->sha1))
 		return 0;
