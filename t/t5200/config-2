@@ -1,0 +1,3 @@
+[http "https://example.com/path"]
+	useragent = example-agent
+	sslVerify = false
