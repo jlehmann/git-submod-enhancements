@@ -1513,6 +1513,21 @@ http.useragent::
 	of common USER_AGENT strings (but not including those like git/1.7.1).
 	Can be overridden by the 'GIT_HTTP_USER_AGENT' environment variable.
 
+http.<url>.*::
+	Any of the http.* options above can be applied selectively to some urls.
+	For example "http.https://example.com.useragent" would set the user
+	agent only for https connections to example.com.  The <url> value
+	matches a url if it is an exact match or a prefix of the url matching
+	at a "/" boundary.  Longer <url> matches take precedence over shorter
+	ones with the environment variable settings taking precedence over all.
+	Note that <url> must match the url passed to git exactly (other than
+	possibly being a prefix).  This means any user, password and/or port
+	setting that appears in a url as well as any %XX escapes that are
+	present must also appear in <url> to have a successful match.  The urls
+	that are matched against are those given directly to git commands.  In
+	other words, use exactly the same url that was passed to git (possibly
+	shortened) for the <url> value of the config setting.
+
 i18n.commitEncoding::
 	Character encoding the commit messages are stored in; Git itself
 	does not care per se, but this information is necessary e.g. when
