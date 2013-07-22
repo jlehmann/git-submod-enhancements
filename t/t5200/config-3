@@ -1,0 +1,4 @@
+[http "https://example.com/path/name"]
+	sslcainfo = file-1
+[http "https://user@example.com/path"]
+	sslcainfo = file-2

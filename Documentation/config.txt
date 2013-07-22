@@ -1517,15 +1517,28 @@ http.<url>.*::
 	Any of the http.* options above can be applied selectively to some urls.
 	For example "http.https://example.com.useragent" would set the user
 	agent only for https connections to example.com.  The <url> value
-	matches a url if it is an exact match or if it is a prefix of the url
-	matching at a "/" boundary.  Longer <url> matches take precedence over
-	shorter ones with the environment variable settings taking precedence
-	over all.  The urls are normalized before testing for a match.  Note,
-	however, that any user, password and/or port setting that appears in a
-	url must also match that part of <url> to have a successful match.  The
-	urls that are matched against are those given directly to git commands.
-	This means any urls visited as a result of a redirection do not
-	participate in matching.
+	matches a url if it refers to the same scheme, host and port and the
+	path portion is an exact match or a prefix that matches at a "/"
+	boundary.  If <url> does not include a user name, it will match a url
+	with any username otherwise the user name must match as well (the
+	password part, if present in the url, is always ignored).  A <url>
+	with longer path matches takes precedence over shorter matches no matter
+	what order they occur in the configuration file.
++
+For example, if both "https://user@example.com/path" and
+"https://example.com/path/name" are used as a config <url> value and
+then "https://user@example.com/path/name/here" is passed to a git
+command, the settings in the "https://example.com/path/name" section
+will be preferred because that <url> has a longer path length match than
+"https://user@example.com/path" even though the latter did match the
+user.  For same length matches, the last one wins except that a same
+length <url> match that includes a user name will be preferred over a
+same length <url> match that does not.  The urls are normalized before
+matching so that equivalent urls that are simply spelled differently
+will match properly.  Environment variable settings always override any
+matches.  The urls that are matched against are those given directly to
+git commands.  This means any urls visited as a result of a redirection
+do not participate in matching.
 
 i18n.commitEncoding::
 	Character encoding the commit messages are stored in; Git itself

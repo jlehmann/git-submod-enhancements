@@ -11,12 +11,12 @@ int main()
 
 static int run_http_options(const char *file,
 			    const char *opt,
-			    const char *url)
+			    const struct url_info *info)
 {
 	struct strbuf opt_lc;
 	size_t i, len;
 
-	if (git_config_with_options(http_options, (void *)url, file, 0))
+	if (git_config_with_options(http_options, (void *)info, file, 0))
 		return 1;
 
 	len = strlen(opt);
@@ -65,7 +65,7 @@ static int run_http_options(const char *file,
 	return 0;
 }
 
-#define url_normalize(u) http_options_url_normalize(u)
+#define url_normalize(u,i) http_options_url_normalize(u,i)
 
 int main(int argc, char **argv)
 {
@@ -108,23 +108,24 @@ int main(int argc, char **argv)
 		die(usage);
 
 	if (argc == 2) {
-		url1 = url_normalize(argv[1]);
+		struct url_info info;
+		url1 = url_normalize(argv[1], &info);
 		if (!url1)
 			return 1;
 		if (opt_p)
 			printf("%s\n", url1);
 		if (opt_l)
-			printf("%u\n", (unsigned)strlen(url1));
+			printf("%u\n", (unsigned)info.url_len);
 		if (opt_c)
-			return run_http_options(file, optname, url1);
+			return run_http_options(file, optname, &info);
 		return 0;
 	}
 
 	if (opt_p || opt_l || opt_c)
 		die(usage);
 
-	url1 = url_normalize(argv[1]);
-	url2 = url_normalize(argv[2]);
+	url1 = url_normalize(argv[1], NULL);
+	url2 = url_normalize(argv[2], NULL);
 	return (url1 && url2 && !strcmp(url1, url2)) ? 0 : 1;
 }
 
