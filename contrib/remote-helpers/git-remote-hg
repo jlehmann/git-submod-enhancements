@@ -390,7 +390,7 @@ def get_repo(url, alias):
         if not os.path.exists(dirname):
             os.makedirs(dirname)
     else:
-        shared_path = os.path.join(gitdir, 'hg')
+        shared_path = os.path.join(gitdir, 'hg', '.shared')
         if not os.path.exists(shared_path):
             try:
                 hg.clone(myui, {}, url, shared_path, update=False, pull=True)
