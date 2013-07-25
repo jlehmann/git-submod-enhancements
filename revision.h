@@ -287,5 +287,6 @@ extern int rewrite_parents(struct rev_info *revs, struct commit *commit,
  */
 extern void save_parents(struct commit *commit);
 extern struct commit_list *get_saved_parents(const struct commit *commit);
+extern void free_saved_parents(void);
 
 #endif

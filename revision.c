@@ -3040,6 +3040,8 @@ struct commit *get_revision(struct rev_info *revs)
 	c = get_revision_internal(revs);
 	if (c && revs->graph)
 		graph_update(revs->graph, c);
+	if (!c)
+		free_saved_parents();
 	return c;
 }
 
@@ -3073,7 +3075,7 @@ void put_revision_mark(const struct rev_info *revs, const struct commit *commit)
 }
 
 define_commit_slab(saved_parents, struct commit_list *);
-struct saved_parents saved_parents_slab;
+static struct saved_parents saved_parents_slab;
 static int saved_parents_initialized;
 
 void save_parents(struct commit *commit)
@@ -3096,4 +3098,10 @@ struct commit_list *get_saved_parents(const struct commit *commit)
 		return commit->parents;
 
 	return *saved_parents_at(&saved_parents_slab, commit);
+}
+
+void free_saved_parents(void)
+{
+	if (saved_parents_initialized)
+		clear_saved_parents(&saved_parents_slab);
 }
