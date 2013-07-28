@@ -2156,9 +2156,13 @@ status.submodulesummary::
 	--summary-limit option of linkgit:git-submodule[1]).
 
 submodule.<name>.path::
+	This setting is ignored and only taken from linkgit:gitmodules[5] as
+	it sets the path within this project, which changes when the submodule
+	is moved.
+
 submodule.<name>.url::
 submodule.<name>.update::
-	The path within this project, URL, and the updating strategy
+	The URL and the updating strategy
 	for a submodule.  These variables are initially populated
 	by 'git submodule init'; edit them to override the
 	URL and other values found in the `.gitmodules` file.  See
