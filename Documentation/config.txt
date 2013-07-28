@@ -2156,13 +2156,22 @@ status.submodulesummary::
 	--summary-limit option of linkgit:git-submodule[1]).
 
 submodule.<name>.path::
+	This setting is ignored and only taken from linkgit:gitmodules[5] as
+	it sets the path within this project, which changes when the submodule
+	is moved.
+
 submodule.<name>.url::
+	The URL for a submodule. Edit it to override the upstream URL of this
+	submodule. See linkgit:git-submodule[1] and linkgit:gitmodules[5] for
+	details.
+
 submodule.<name>.update::
-	The path within this project, URL, and the updating strategy
-	for a submodule.  These variables are initially populated
-	by 'git submodule init'; edit them to override the
-	URL and other values found in the `.gitmodules` file.  See
-	linkgit:git-submodule[1] and linkgit:gitmodules[5] for details.
+	The URL and the updating strategy for a submodule. Until Git 2.0
+	this variable was initially populated from the .gitmodules file on
+	'git submodule init', nowadays it won't to
+	allow upstream the change the update default. Edit them to override the
+	This setting will override that from in the linkgit:gitmodules[5]
+	file.
 
 submodule.<name>.branch::
 	The remote branch name for a submodule, used by `git submodule

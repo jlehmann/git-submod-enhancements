@@ -130,8 +130,8 @@ init::
 	added and committed elsewhere) by copying submodule
 	names and urls from .gitmodules to .git/config.
 	Optional <path> arguments limit which submodules will be initialized.
-	It will also copy the value of `submodule.$name.update` into
-	.git/config.
+	Since Git 2.0 it won't copy the value of `submodule.$name.update` into
+	.git/config anymore to allow upstream to change its default.
 	The key used in .git/config is `submodule.$name.url`.
 	This command does not alter existing information in .git/config.
 	You can then customize the submodule clone URLs in .git/config

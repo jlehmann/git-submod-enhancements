@@ -610,13 +610,6 @@ cmd_init()
 
 			say "$(eval_gettext "Submodule '\$name' (\$url) registered for path '\$displaypath'")"
 		fi
-
-		# Copy "update" setting when it is not set yet
-		upd="$(git config -f .gitmodules submodule."$name".update)"
-		test -z "$upd" ||
-		test -n "$(git config submodule."$name".update)" ||
-		git config submodule."$name".update "$upd" ||
-		die "$(eval_gettext "Failed to register update mode for submodule path '\$displaypath'")"
 	done
 }
 
@@ -792,7 +785,7 @@ cmd_update()
 		then
 			update_module=$update
 		else
-			update_module=$(git config submodule."$name".update)
+			update_module=$(get_submodule_config "$name" update checkout)
 		fi
 
 		displaypath=$(relative_path "$prefix$sm_path")

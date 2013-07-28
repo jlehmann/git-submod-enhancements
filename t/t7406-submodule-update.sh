@@ -323,19 +323,19 @@ test_expect_success 'submodule update - command in .git/config catches failure' 
 	)
 '
 
-test_expect_success 'submodule init picks up rebase' '
+test_expect_success 'submodule init does not copy rebase' '
 	(cd super &&
 	 git config -f .gitmodules submodule.rebasing.update rebase &&
 	 git submodule init rebasing &&
-	 test "rebase" = "$(git config submodule.rebasing.update)"
+	 test_must_fail git config submodule.rebasing.update
 	)
 '
 
-test_expect_success 'submodule init picks up merge' '
+test_expect_success 'submodule init does not copy merge' '
 	(cd super &&
 	 git config -f .gitmodules submodule.merging.update merge &&
 	 git submodule init merging &&
-	 test "merge" = "$(git config submodule.merging.update)"
+	 test_must_fail git config submodule.merging.update
 	)
 '
 
@@ -391,11 +391,11 @@ test_expect_success 'submodule update ignores update=rebase config for new submo
 	)
 '
 
-test_expect_success 'submodule init picks up update=none' '
+test_expect_success 'submodule init does not copy update=none' '
 	(cd super &&
 	 git config -f .gitmodules submodule.none.update none &&
 	 git submodule init none &&
-	 test "none" = "$(git config submodule.none.update)"
+	 test_must_fail git config submodule.none.update
 	)
 '
 
