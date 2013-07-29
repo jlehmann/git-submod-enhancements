@@ -44,6 +44,7 @@ enum http_option_type {
 	OPT_COOKIE_FILE,
 	OPT_USER_AGENT,
 	OPT_PASSWD_REQ,
+	OPT_SAVE_COOKIES,
 #ifdef USE_CURL_MULTI
 	OPT_MAX_REQUESTS,
 #endif
@@ -101,6 +102,7 @@ static long curl_low_speed_time = -1;
 static int curl_ftp_no_epsv;
 static const char *curl_http_proxy;
 static const char *curl_cookie_file;
+static int curl_save_cookies;
 static struct credential http_auth = CREDENTIAL_INIT;
 static int http_proactive_auth;
 static const char *user_agent;
@@ -822,6 +824,13 @@ static int http_options(const char *var, const char *value, void *cb)
 		return git_config_string(&curl_cookie_file, var, value);
 	}
 
+	if (!strcmp("savecookies", var)) {
+		if (match_is_ignored(matchlen, usermatch, OPT_SAVE_COOKIES))
+			return 0;
+		curl_save_cookies = git_config_bool(var, value);
+		return 0;
+	}
+
 	if (!strcmp("postbuffer", key)) {
 		if (match_is_ignored(matchlen, usermatch, OPT_POST_BUFFER))
 			return 0;
@@ -1144,6 +1153,8 @@ struct active_request_slot *get_active_slot(void)
 	slot->callback_data = NULL;
 	slot->callback_func = NULL;
 	curl_easy_setopt(slot->curl, CURLOPT_COOKIEFILE, curl_cookie_file);
+	if (curl_save_cookies)
+		curl_easy_setopt(slot->curl, CURLOPT_COOKIEJAR, curl_cookie_file);
 	curl_easy_setopt(slot->curl, CURLOPT_HTTPHEADER, pragma_header);
 	curl_easy_setopt(slot->curl, CURLOPT_ERRORBUFFER, curl_errorstr);
 	curl_easy_setopt(slot->curl, CURLOPT_CUSTOMREQUEST, NULL);
