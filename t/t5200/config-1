@@ -1,0 +1,8 @@
+[http]
+	useragent = other-agent
+	noEPSV = true
+[http "https://example.com"]
+	useragent = example-agent
+	sslVerify = false
+[http "https://example.com/path"]
+	useragent = path-agent

@@ -1,0 +1,18 @@
+The url data files in this directory contain URLs with characters
+in the range 0x01-0x1f and 0x7f-0xff to test the proper normalization
+of unprintable characters.
+
+A select few characters in the 0x01-0x1f range are skipped to help
+avoid problems running the test itself.
+
+The urls are in test files in this directory rather than being
+embedded in the test script for portability.
+
+The config data files in this directory represent configurations
+to be parsed by http_options so that the final option value can be
+tested.
+
+The config files may contain more than one same-named section to
+simulate having a system, global and .git config file.
+
+
