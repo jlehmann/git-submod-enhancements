@@ -274,4 +274,20 @@ typedef enum rewrite_result (*rewrite_parent_fn_t)(struct rev_info *revs, struct
 
 extern int rewrite_parents(struct rev_info *revs, struct commit *commit,
 	rewrite_parent_fn_t rewrite_parent);
+
+/*
+ * Save a copy of the parent list, and return the saved copy.  This is
+ * used by the log machinery to retrieve the original parents when
+ * commit->parents has been modified by history simpification.
+ *
+ * You may only call save_parents() once per commit (this is checked
+ * for non-root commits).
+ *
+ * get_saved_parents() will transparently return commit->parents if
+ * history simplification is off.
+ */
+extern void save_parents(struct commit *commit);
+extern struct commit_list *get_saved_parents(const struct commit *commit);
+extern void free_saved_parents(void);
+
 #endif

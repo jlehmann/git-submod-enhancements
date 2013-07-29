@@ -15,6 +15,7 @@
 #include "string-list.h"
 #include "line-log.h"
 #include "mailmap.h"
+#include "commit-slab.h"
 
 volatile show_early_output_fn_t show_early_output;
 
@@ -2764,7 +2765,7 @@ static int commit_match(struct commit *commit, struct rev_info *opt)
 	return retval;
 }
 
-static inline int want_ancestry(struct rev_info *revs)
+static inline int want_ancestry(const struct rev_info *revs)
 {
 	return (revs->rewrite_parents || revs->children.name);
 }
@@ -2821,6 +2822,7 @@ enum commit_action simplify_commit(struct rev_info *revs, struct commit *commit)
 	if (action == commit_show &&
 	    !revs->show_all &&
 	    revs->prune && revs->dense && want_ancestry(revs)) {
+		save_parents(commit);
 		if (rewrite_parents(revs, commit, rewrite_one) < 0)
 			return commit_error;
 	}
@@ -3039,6 +3041,8 @@ struct commit *get_revision(struct rev_info *revs)
 	c = get_revision_internal(revs);
 	if (c && revs->graph)
 		graph_update(revs->graph, c);
+	if (!c)
+		free_saved_parents();
 	return c;
 }
 
@@ -3069,4 +3073,36 @@ void put_revision_mark(const struct rev_info *revs, const struct commit *commit)
 		return;
 	fputs(mark, stdout);
 	putchar(' ');
+}
+
+define_commit_slab(saved_parents, struct commit_list *);
+static struct saved_parents saved_parents_slab;
+static int saved_parents_initialized;
+
+void save_parents(struct commit *commit)
+{
+	struct commit_list **pp;
+
+	if (!saved_parents_initialized) {
+		init_saved_parents(&saved_parents_slab);
+		saved_parents_initialized = 1;
+	}
+
+	pp = saved_parents_at(&saved_parents_slab, commit);
+	assert(*pp == NULL);
+	*pp = copy_commit_list(commit->parents);
+}
+
+struct commit_list *get_saved_parents(const struct commit *commit)
+{
+	if (!saved_parents_initialized)
+		return commit->parents;
+
+	return *saved_parents_at(&saved_parents_slab, commit);
+}
+
+void free_saved_parents(void)
+{
+	if (saved_parents_initialized)
+		clear_saved_parents(&saved_parents_slab);
 }
