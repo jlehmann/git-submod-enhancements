@@ -792,7 +792,7 @@ cmd_update()
 		then
 			update_module=$update
 		else
-			update_module=$(git config submodule."$name".update)
+			update_module=$(get_submodule_config "$name" update checkout)
 		fi
 
 		displaypath=$(relative_path "$prefix$sm_path")
