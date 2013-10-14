@@ -859,12 +859,25 @@ int handle_curl_result(struct slot_results *results)
 	}
 }
 
+static CURLcode curlinfo_strbuf(CURL *curl, CURLINFO info, struct strbuf *buf)
+{
+	char *ptr;
+	CURLcode ret;
+
+	strbuf_reset(buf);
+	ret = curl_easy_getinfo(curl, info, &ptr);
+	if (!ret && ptr)
+		strbuf_addstr(buf, ptr);
+	return ret;
+}
+
 /* http_request() targets */
 #define HTTP_REQUEST_STRBUF	0
 #define HTTP_REQUEST_FILE	1
 
-static int http_request(const char *url, struct strbuf *type,
-			void *result, int target, int options)
+static int http_request(const char *url,
+			void *result, int target,
+			const struct http_get_options *options)
 {
 	struct active_request_slot *slot;
 	struct slot_results results;
@@ -897,9 +910,9 @@ static int http_request(const char *url, struct strbuf *type,
 	}
 
 	strbuf_addstr(&buf, "Pragma:");
-	if (options & HTTP_NO_CACHE)
+	if (options && options->no_cache)
 		strbuf_addstr(&buf, " no-cache");
-	if (options & HTTP_KEEP_ERROR)
+	if (options && options->keep_error)
 		curl_easy_setopt(slot->curl, CURLOPT_FAILONERROR, 0);
 
 	headers = curl_slist_append(headers, buf.buf);
@@ -917,13 +930,9 @@ static int http_request(const char *url, struct strbuf *type,
 		ret = HTTP_START_FAILED;
 	}
 
-	if (type) {
-		char *t;
-		strbuf_reset(type);
-		curl_easy_getinfo(slot->curl, CURLINFO_CONTENT_TYPE, &t);
-		if (t)
-			strbuf_addstr(type, t);
-	}
+	if (options && options->content_type)
+		curlinfo_strbuf(slot->curl, CURLINFO_CONTENT_TYPE,
+				options->content_type);
 
 	curl_slist_free_all(headers);
 	strbuf_release(&buf);
@@ -932,11 +941,10 @@ static int http_request(const char *url, struct strbuf *type,
 }
 
 static int http_request_reauth(const char *url,
-			       struct strbuf *type,
 			       void *result, int target,
-			       int options)
+			       struct http_get_options *options)
 {
-	int ret = http_request(url, type, result, target, options);
+	int ret = http_request(url, result, target, options);
 	if (ret != HTTP_REAUTH)
 		return ret;
 
@@ -946,7 +954,7 @@ static int http_request_reauth(const char *url,
 	 * making our next request. We only know how to do this for
 	 * the strbuf case, but that is enough to satisfy current callers.
 	 */
-	if (options & HTTP_KEEP_ERROR) {
+	if (options && options->keep_error) {
 		switch (target) {
 		case HTTP_REQUEST_STRBUF:
 			strbuf_reset(result);
@@ -955,15 +963,14 @@ static int http_request_reauth(const char *url,
 			die("BUG: HTTP_KEEP_ERROR is only supported with strbufs");
 		}
 	}
-	return http_request(url, type, result, target, options);
+	return http_request(url, result, target, options);
 }
 
 int http_get_strbuf(const char *url,
-		    struct strbuf *type,
-		    struct strbuf *result, int options)
+		    struct strbuf *result,
+		    struct http_get_options *options)
 {
-	return http_request_reauth(url, type, result,
-				   HTTP_REQUEST_STRBUF, options);
+	return http_request_reauth(url, result, HTTP_REQUEST_STRBUF, options);
 }
 
 /*
@@ -972,7 +979,8 @@ int http_get_strbuf(const char *url,
  * If a previous interrupted download is detected (i.e. a previous temporary
  * file is still around) the download is resumed.
  */
-static int http_get_file(const char *url, const char *filename, int options)
+static int http_get_file(const char *url, const char *filename,
+			 struct http_get_options *options)
 {
 	int ret;
 	struct strbuf tmpfile = STRBUF_INIT;
@@ -980,16 +988,16 @@ static int http_get_file(const char *url, const char *filename, int options)
 
 	strbuf_addf(&tmpfile, "%s.temp", filename);
 	result = fopen(tmpfile.buf, "a");
-	if (! result) {
+	if (!result) {
 		error("Unable to open local file %s", tmpfile.buf);
 		ret = HTTP_ERROR;
 		goto cleanup;
 	}
 
-	ret = http_request_reauth(url, NULL, result, HTTP_REQUEST_FILE, options);
+	ret = http_request_reauth(url, result, HTTP_REQUEST_FILE, options);
 	fclose(result);
 
-	if ((ret == HTTP_OK) && move_temp_to_file(tmpfile.buf, filename))
+	if (ret == HTTP_OK && move_temp_to_file(tmpfile.buf, filename))
 		ret = HTTP_ERROR;
 cleanup:
 	strbuf_release(&tmpfile);
@@ -998,12 +1006,15 @@ cleanup:
 
 int http_fetch_ref(const char *base, struct ref *ref)
 {
+	struct http_get_options options = {0};
 	char *url;
 	struct strbuf buffer = STRBUF_INIT;
 	int ret = -1;
 
+	options.no_cache = 1;
+
 	url = quote_ref_url(base, ref->name);
-	if (http_get_strbuf(url, NULL, &buffer, HTTP_NO_CACHE) == HTTP_OK) {
+	if (http_get_strbuf(url, &buffer, &options) == HTTP_OK) {
 		strbuf_rtrim(&buffer);
 		if (buffer.len == 40)
 			ret = get_sha1_hex(buffer.buf, ref->old_sha1);
@@ -1087,6 +1098,7 @@ add_pack:
 
 int http_get_info_packs(const char *base_url, struct packed_git **packs_head)
 {
+	struct http_get_options options = {0};
 	int ret = 0, i = 0;
 	char *url, *data;
 	struct strbuf buf = STRBUF_INIT;
@@ -1096,7 +1108,8 @@ int http_get_info_packs(const char *base_url, struct packed_git **packs_head)
 	strbuf_addstr(&buf, "objects/info/packs");
 	url = strbuf_detach(&buf, NULL);
 
-	ret = http_get_strbuf(url, NULL, &buf, HTTP_NO_CACHE);
+	options.no_cache = 1;
+	ret = http_get_strbuf(url, &buf, &options);
 	if (ret != HTTP_OK)
 		goto cleanup;
 
