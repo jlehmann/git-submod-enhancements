@@ -102,6 +102,7 @@ extern void http_cleanup(void);
 extern int active_requests;
 extern int http_is_verbose;
 extern size_t http_post_buffer;
+extern struct credential http_auth;
 
 extern char curl_errorstr[CURL_ERROR_SIZE];
 
@@ -132,6 +133,20 @@ struct http_get_options {
 
 	/* If non-NULL, returns the content-type of the response. */
 	struct strbuf *content_type;
+
+	/*
+	 * If non-NULL, returns the URL we ended up at, including any
+	 * redirects we followed.
+	 */
+	struct strbuf *effective_url;
+
+	/*
+	 * If both base_url and effective_url are non-NULL, the base URL will
+	 * be munged to reflect any redirections going from the requested url
+	 * to effective_url. See the definition of update_url_from_redirect
+	 * for details.
+	 */
+	struct strbuf *base_url;
 };
 
 /* Return values for http_get_*() */
