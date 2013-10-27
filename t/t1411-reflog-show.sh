@@ -166,4 +166,32 @@ test_expect_success 'git log -g -p shows diffs vs. parents' '
 	test_cmp expect actual
 '
 
+test_expect_success 'add annotated tag' '
+	git tag -a -m "tag message" annotated-tag
+'
+
+: >expect
+test_expect_success 'reflog on a tag' '
+	git reflog two >actual &&
+	test_cmp expect actual
+'
+
+: >expect
+test_expect_success 'reflog on an annotated tag' '
+	git reflog annotated-tag >actual &&
+	test_cmp expect actual
+'
+
+: >expect
+test_expect_success 'log -g on a tag' '
+	git log -g two >actual &&
+	test_cmp expect actual
+'
+
+: >expect
+test_expect_success 'log -g on an annotated tag' '
+	git log -g annotated-tag >actual &&
+	test_cmp expect actual
+'
+
 test_done
