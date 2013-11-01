@@ -198,7 +198,7 @@ static void add_pending_object_with_mode(struct rev_info *revs,
 		return;
 	if (revs->no_walk && (obj->flags & UNINTERESTING))
 		revs->no_walk = 0;
-	if (revs->reflog_info && obj->type == OBJ_COMMIT) {
+	if (revs->reflog_info) {
 		struct strbuf buf = STRBUF_INIT;
 		int len = interpret_branch_name(name, 0, &buf);
 		int st;
