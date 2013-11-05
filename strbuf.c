@@ -10,13 +10,13 @@ int prefixcmp(const char *str, const char *prefix)
 			return (unsigned char)*prefix - (unsigned char)*str;
 }
 
-int suffixcmp(const char *str, const char *suffix)
+int has_suffix(const char *str, const char *suffix)
 {
 	int len = strlen(str), suflen = strlen(suffix);
 	if (len < suflen)
-		return -1;
+		return 0;
 	else
-		return strcmp(str + len - suflen, suffix);
+		return !strcmp(str + len - suflen, suffix);
 }
 
 /*
