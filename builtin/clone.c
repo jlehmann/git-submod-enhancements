@@ -510,7 +510,7 @@ static void write_followtags(const struct ref *refs, const char *msg)
 	for (ref = refs; ref; ref = ref->next) {
 		if (prefixcmp(ref->name, "refs/tags/"))
 			continue;
-		if (!suffixcmp(ref->name, "^{}"))
+		if (has_suffix(ref->name, "^{}"))
 			continue;
 		if (!has_sha1_file(ref->old_sha1))
 			continue;
