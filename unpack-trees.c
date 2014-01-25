@@ -26,6 +26,9 @@ static const char *unpack_plumbing_errors[NB_UNPACK_TREES_ERROR_TYPES] = {
 	/* ERROR_NOT_UPTODATE_DIR */
 	"Updating '%s' would lose untracked files in it",
 
+	/* ERROR_NOT_UPTODATE_SUBMODULE */
+	"Updating submodule '%s' would lose modifications in it",
+
 	/* ERROR_WOULD_LOSE_UNTRACKED_OVERWRITTEN */
 	"Untracked working tree file '%s' would be overwritten by merge.",
 
@@ -70,6 +73,8 @@ void setup_unpack_trees_porcelain(struct unpack_trees_options *opts,
 
 	msgs[ERROR_NOT_UPTODATE_DIR] =
 		"Updating the following directories would lose untracked files in it:\n%s";
+	msgs[ERROR_NOT_UPTODATE_SUBMODULE] =
+		"Updating the following submodules would lose modifications in it:\n%s";
 
 	if (advice_commit_before_merge)
 		msg = "The following untracked working tree files would be %s by %s:\n%%s"
@@ -1274,7 +1279,12 @@ static int verify_clean_submodule(const struct cache_entry *ce,
 				  enum unpack_trees_error_types error_type,
 				  struct unpack_trees_options *o)
 {
-	return 0;
+	unsigned char sha1[20];
+	if (!resolve_gitlink_ref(ce->name, "HEAD", sha1) &&
+	    !hashcmp(sha1, ce->sha1))
+		return 0;
+	return o->gently ? -1 :
+		add_rejected_path(o, ERROR_NOT_UPTODATE_SUBMODULE, ce->name);
 }
 
 static int verify_clean_subdirectory(const struct cache_entry *ce,
@@ -1290,17 +1300,9 @@ static int verify_clean_subdirectory(const struct cache_entry *ce,
 	struct dir_struct d;
 	char *pathbuf;
 	int cnt = 0;
-	unsigned char sha1[20];
 
-	if (S_ISGITLINK(ce->ce_mode) &&
-	    resolve_gitlink_ref(ce->name, "HEAD", sha1) == 0) {
-		/* If we are not going to update the submodule, then
-		 * we don't care.
-		 */
-		if (!hashcmp(sha1, ce->sha1))
-			return 0;
+	if (S_ISGITLINK(ce->ce_mode))
 		return verify_clean_submodule(ce, error_type, o);
-	}
 
 	/*
 	 * First let's make sure we do not have a local modification
