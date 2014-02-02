@@ -63,6 +63,27 @@ static int gitmodules_is_unmerged;
 static int gitmodules_is_modified;
 
 
+/*
+ * Convert values defined in the RECURSE_SUBMODULES_* enum to the string
+ * representation usable as command parameter. Returns NULL if no parameter
+ * is necessary.
+ */
+const char *recurse_submodules_enum_to_option(int recurse_submodules)
+{
+	switch(recurse_submodules) {
+	case RECURSE_SUBMODULES_ON_DEMAND:
+		return "--recurse-submodules=on-demand";
+	case RECURSE_SUBMODULES_OFF:
+		return "--no-recurse-submodules";
+	case RECURSE_SUBMODULES_ON:
+		return "--recurse-submodules";
+	case RECURSE_SUBMODULES_DEFAULT:
+		return NULL;
+	default:
+		die("Invalid recurse submodule value: %d", recurse_submodules);
+	}
+}
+
 int is_staging_gitmodules_ok(void)
 {
 	return !gitmodules_is_modified;

@@ -11,13 +11,13 @@
 #include "bisect.h"
 #include "sha1-array.h"
 #include "argv-array.h"
+#include "submodule.h"
 
 static struct sha1_array good_revs;
 static struct sha1_array skipped_revs;
 
 static unsigned char *current_bad_sha1;
 
-static const char *argv_checkout[] = {"checkout", "-q", NULL, "--", NULL};
 static const char *argv_show_branch[] = {"show-branch", NULL, NULL};
 static const char *argv_update_ref[] = {"update-ref", "--no-deref", "BISECT_HEAD", NULL, NULL};
 
@@ -683,12 +683,12 @@ static void mark_expected_rev(char *bisect_rev_hex)
 		die("closing file %s: %s", filename, strerror(errno));
 }
 
-static int bisect_checkout(char *bisect_rev_hex, int no_checkout)
+static int bisect_checkout(char *bisect_rev_hex, int no_checkout,
+			   const char *recurse_submodules)
 {
 
 	mark_expected_rev(bisect_rev_hex);
 
-	argv_checkout[2] = bisect_rev_hex;
 	if (no_checkout) {
 		argv_update_ref[3] = bisect_rev_hex;
 		if (run_command_v_opt(argv_update_ref, RUN_GIT_CMD))
@@ -696,9 +696,17 @@ static int bisect_checkout(char *bisect_rev_hex, int no_checkout)
 			    bisect_rev_hex);
 	} else {
 		int res;
-		res = run_command_v_opt(argv_checkout, RUN_GIT_CMD);
+		struct argv_array argv = ARGV_ARRAY_INIT;
+		argv_array_push(&argv, "checkout");
+		argv_array_push(&argv, "-q");
+		if (recurse_submodules)
+		    argv_array_push(&argv, recurse_submodules);
+		argv_array_push(&argv, bisect_rev_hex);
+		argv_array_push(&argv, "--");
+		res = run_command_v_opt(argv.argv, RUN_GIT_CMD);
 		if (res)
 			exit(res);
+		argv_array_clear(&argv);
 	}
 
 	argv_show_branch[1] = bisect_rev_hex;
@@ -771,7 +779,7 @@ static void handle_skipped_merge_base(const unsigned char *mb)
  * - If one is "skipped", we can't know but we should warn.
  * - If we don't know, we should check it out and ask the user to test.
  */
-static void check_merge_bases(int no_checkout)
+static void check_merge_bases(int no_checkout, const char *recurse_submodules)
 {
 	struct commit_list *result;
 	int rev_nr;
@@ -789,7 +797,8 @@ static void check_merge_bases(int no_checkout)
 			handle_skipped_merge_base(mb);
 		} else {
 			printf("Bisecting: a merge base must be tested\n");
-			exit(bisect_checkout(sha1_to_hex(mb), no_checkout));
+			exit(bisect_checkout(sha1_to_hex(mb), no_checkout,
+					     recurse_submodules));
 		}
 	}
 
@@ -832,7 +841,8 @@ static int check_ancestors(const char *prefix)
  * If a merge base must be tested by the user, its source code will be
  * checked out to be tested by the user and we will exit.
  */
-static void check_good_are_ancestors_of_bad(const char *prefix, int no_checkout)
+static void check_good_are_ancestors_of_bad(const char *prefix, int no_checkout,
+					    const char *recurse_submodules)
 {
 	char *filename = git_pathdup("BISECT_ANCESTORS_OK");
 	struct stat st;
@@ -851,7 +861,7 @@ static void check_good_are_ancestors_of_bad(const char *prefix, int no_checkout)
 
 	/* Check if all good revs are ancestor of the bad rev. */
 	if (check_ancestors(prefix))
-		check_merge_bases(no_checkout);
+		check_merge_bases(no_checkout, recurse_submodules);
 
 	/* Create file BISECT_ANCESTORS_OK. */
 	fd = open(filename, O_CREAT | O_TRUNC | O_WRONLY, 0600);
@@ -897,7 +907,8 @@ static void show_diff_tree(const char *prefix, struct commit *commit)
  * If no_checkout is non-zero, the bisection process does not
  * checkout the trial commit but instead simply updates BISECT_HEAD.
  */
-int bisect_next_all(const char *prefix, int no_checkout)
+int bisect_next_all(const char *prefix, int no_checkout,
+		    const char *recurse_submodules)
 {
 	struct rev_info revs;
 	struct commit_list *tried;
@@ -908,7 +919,7 @@ int bisect_next_all(const char *prefix, int no_checkout)
 	if (read_bisect_refs())
 		die("reading bisect refs failed");
 
-	check_good_are_ancestors_of_bad(prefix, no_checkout);
+	check_good_are_ancestors_of_bad(prefix, no_checkout, recurse_submodules);
 
 	bisect_rev_setup(&revs, prefix, "%s", "^%s", 1);
 	revs.limited = 1;
@@ -954,7 +965,7 @@ int bisect_next_all(const char *prefix, int no_checkout)
 	       "(roughly %d step%s)\n", nr, (nr == 1 ? "" : "s"),
 	       steps, (steps == 1 ? "" : "s"));
 
-	return bisect_checkout(bisect_rev_hex, no_checkout);
+	return bisect_checkout(bisect_rev_hex, no_checkout, recurse_submodules);
 }
 
 static inline int log2i(int n)
