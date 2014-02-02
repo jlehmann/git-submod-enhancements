@@ -3,7 +3,7 @@
 USAGE='[help|start|bad|good|skip|next|reset|visualize|replay|log|run]'
 LONG_USAGE='git bisect help
 	print this long help message.
-git bisect start [--no-checkout] [<bad> [<good>...]] [--] [<pathspec>...]
+git bisect start [--no-checkout] [--[no-]recurse-submodules[=<mode>]] [<bad> [<good>...]] [--] [<pathspec>...]
 	reset bisect state and start bisection.
 git bisect bad [<rev>]
 	mark <rev> a known-bad revision.
@@ -91,6 +91,12 @@ bisect_start() {
 		--no-checkout)
 			mode=--no-checkout
 			shift ;;
+		--no-recurse-submodules)
+			recurse_submodules="$1"
+			shift ;;
+		--recurse-submodules*)
+			recurse_submodules="$1"
+			shift ;;
 		--*)
 			die "$(eval_gettext "unrecognised option: '\$arg'")" ;;
 		*)
@@ -124,9 +130,13 @@ bisect_start() {
 	then
 		# Reset to the rev from where we started.
 		start_head=$(cat "$GIT_DIR/BISECT_START")
+		if test -s "$GIT_DIR/BISECT_RECURSE_SUBMODULES"
+		then
+			recurse_submodules=$(cat "$GIT_DIR/BISECT_RECURSE_SUBMODULES")
+		fi
 		if test "z$mode" != "z--no-checkout"
 		then
-			git checkout "$start_head" -- ||
+			git checkout ${recurse_submodules:+"$recurse_submodules"} "$start_head" -- ||
 			die "$(eval_gettext "Checking out '\$start_head' failed. Try 'git bisect reset <valid-branch>'.")"
 		fi
 	else
@@ -168,7 +178,10 @@ bisect_start() {
 		test "z$mode" != "z--no-checkout" ||
 		git update-ref --no-deref BISECT_HEAD "$start_head"
 	} &&
-	git rev-parse --sq-quote "$@" >"$GIT_DIR/BISECT_NAMES" &&
+	git rev-parse --sq-quote "$@" >"$GIT_DIR/BISECT_NAMES" && {
+		test -z "$recurse_submodules" ||
+		echo "$recurse_submodules" >"$GIT_DIR/BISECT_RECURSE_SUBMODULES"
+	} &&
 	eval "$eval true" &&
 	echo "git bisect start$orig_args" >>"$GIT_DIR/BISECT_LOG" || exit
 	#
@@ -309,8 +322,13 @@ bisect_next() {
 	bisect_autostart
 	bisect_next_check good
 
+	if test -f "$GIT_DIR/BISECT_RECURSE_SUBMODULES"
+	then
+		recurse_submodules=$(cat "$GIT_DIR/BISECT_RECURSE_SUBMODULES")
+	fi
+
 	# Perform all bisection computation, display and checkout
-	git bisect--helper --next-all $(test -f "$GIT_DIR/BISECT_HEAD" && echo --no-checkout)
+	git bisect--helper --next-all $(test -f "$GIT_DIR/BISECT_HEAD" && echo --no-checkout) ${recurse_submodules:+"$recurse_submodules"}
 	res=$?
 
 	# Check if we should exit because bisection is finished
@@ -377,7 +395,7 @@ bisect_reset() {
 		usage ;;
 	esac
 
-	if ! test -f "$GIT_DIR/BISECT_HEAD" && ! git checkout "$branch" --
+	if ! test -f "$GIT_DIR/BISECT_HEAD" && ! git checkout ${recurse_submodules:+"$recurse_submodules"} "$branch" --
 	then
 		die "$(eval_gettext "Could not check out original HEAD '\$branch'.
 Try 'git bisect reset <commit>'.")"
@@ -400,6 +418,7 @@ bisect_clean_state() {
 	# Cleanup head-name if it got left by an old version of git-bisect
 	rm -f "$GIT_DIR/head-name" &&
 	git update-ref -d --no-deref BISECT_HEAD &&
+	rm -f "$GIT_DIR/BISECT_RECURSE_SUBMODULES" &&
 	# clean up BISECT_START last
 	rm -f "$GIT_DIR/BISECT_START"
 }
