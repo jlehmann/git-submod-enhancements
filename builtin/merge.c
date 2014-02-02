@@ -30,6 +30,7 @@
 #include "fmt-merge-msg.h"
 #include "gpg-interface.h"
 #include "sequencer.h"
+#include "submodule.h"
 
 #define DEFAULT_TWOHEAD (1<<0)
 #define DEFAULT_OCTOPUS (1<<1)
@@ -67,6 +68,8 @@ static int abort_current_merge;
 static int show_progress = -1;
 static int default_to_upstream = 1;
 static const char *sign_commit;
+static const char *recurse_submodules_default = "off";
+static int recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 
 static struct strategy all_strategy[] = {
 	{ "recursive",  DEFAULT_TWOHEAD | NO_TRIVIAL },
@@ -225,6 +228,12 @@ static struct option builtin_merge_options[] = {
 	{ OPTION_STRING, 'S', "gpg-sign", &sign_commit, N_("key-id"),
 	  N_("GPG sign commit"), PARSE_OPT_OPTARG, NULL, (intptr_t) "" },
 	OPT_BOOL(0, "overwrite-ignore", &overwrite_ignore, N_("update ignored files (default)")),
+	{ OPTION_CALLBACK, 0, "recurse-submodules", &recurse_submodules,
+		"checkout", "control recursive updating of submodules",
+		PARSE_OPT_OPTARG, option_parse_update_submodules },
+	{ OPTION_STRING, 0, "recurse-submodules-default",
+		&recurse_submodules_default, NULL,
+		"default mode for recursion", PARSE_OPT_HIDDEN },
 	OPT_END()
 };
 
@@ -1106,6 +1115,7 @@ int cmd_merge(int argc, const char **argv, const char *prefix)
 	else
 		head_commit = lookup_commit_or_die(head_sha1, "HEAD");
 
+	gitmodules_config();
 	git_config(git_merge_config, NULL);
 
 	if (branch_mergeoptions)
@@ -1114,6 +1124,10 @@ int cmd_merge(int argc, const char **argv, const char *prefix)
 			builtin_merge_usage, 0);
 	if (shortlog_len < 0)
 		shortlog_len = (merge_log_config > 0) ? merge_log_config : 0;
+	set_config_update_recurse_submodules(
+		parse_update_recurse_submodules_arg("--recurse-submodules-default",
+						    recurse_submodules_default),
+		recurse_submodules);
 
 	if (verbosity < 0 && show_progress == -1)
 		show_progress = 0;
