@@ -10,7 +10,8 @@ SYNOPSIS
 [verse]
 'git reset' [-q] [<tree-ish>] [--] <paths>...
 'git reset' (--patch | -p) [<tree-ish>] [--] [<paths>...]
-'git reset' [--soft | --mixed [-N] | --hard | --merge | --keep] [-q] [<commit>]
+'git reset' [--soft | --mixed [-N] | --hard | --merge | --keep] [-q]
+	[--recurse-submodules] [<commit>]
 
 DESCRIPTION
 -----------
@@ -97,6 +98,10 @@ OPTIONS
 --quiet::
 	Be quiet, only report errors.
 
+include::recurse-submodules-update.txt[]
++
+This option only makes sense together with `--hard`, `--merge` and `--keep`
+and is ignored when used without these options.
 
 EXAMPLES
 --------
