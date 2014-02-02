@@ -11,6 +11,7 @@ enum {
 	RECURSE_SUBMODULES_DEFAULT = 1,
 	RECURSE_SUBMODULES_ON = 2
 };
+const char *recurse_submodules_enum_to_option(int recurse_submodules);
 
 int is_staging_gitmodules_ok(void);
 int update_path_in_gitmodules(const char *oldpath, const char *newpath);
