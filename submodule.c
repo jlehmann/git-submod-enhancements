@@ -367,6 +367,43 @@ int submodule_needs_update(const char *path, const unsigned char sha1[20])
 	return config_update_recurse_submodules == RECURSE_SUBMODULES_ON;
 }
 
+int depopulate_submodule(const char *path)
+{
+	struct strbuf dot_git = STRBUF_INIT;
+	struct child_process cp;
+	const char *argv[] = {"rm", "-rf", path, NULL};
+
+	/* Is it populated? */
+	strbuf_addf(&dot_git, "%s/.git", path);
+	if (!resolve_gitdir(dot_git.buf)) {
+		strbuf_release(&dot_git);
+		return 0;
+	}
+	strbuf_release(&dot_git);
+
+	/* Does it have a .git directory? */
+	if (!submodule_uses_gitfile(path)) {
+		warning(_("cannot remove submodule '%s' because it (or one of "
+			  "its nested submodules) uses a .git directory"),
+			  path);
+		return -1;
+	}
+
+	/* Remove the whole submodule directory */
+	memset(&cp, 0, sizeof(cp));
+	cp.argv = argv;
+	cp.env = local_repo_env;
+	cp.git_cmd = 0;
+	cp.no_stdin = 1;
+	if (run_command(&cp)) {
+		warning("Could not remove submodule %s", path);
+		strbuf_release(&dot_git);
+		return -1;
+	}
+
+	return 0;
+}
+
 void show_submodule_summary(FILE *f, const char *path,
 		const char *line_prefix,
 		unsigned char one[20], unsigned char two[20],

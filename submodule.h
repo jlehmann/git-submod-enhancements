@@ -27,6 +27,7 @@ void handle_ignore_submodules_arg(struct diff_options *diffopt, const char *);
 int option_parse_update_submodules(const struct option *opt,
 		const char *arg, int unset);
 int submodule_needs_update(const char *path, const unsigned char sha1[29]);
+int depopulate_submodule(const char *path);
 void show_submodule_summary(FILE *f, const char *path,
 		const char *line_prefix,
 		unsigned char one[20], unsigned char two[20],
