@@ -276,6 +276,11 @@ does not require a checked out tree.
 +
 If the repository is bare, `--no-checkout` is assumed.
 
+include::recurse-submodules-update.txt[]
++
+This option is passed to linkgit:git-checkout[1] when checking out the next
+to be tested commit and is ignored when used together with `--no-checkout`.
+
 EXAMPLES
 --------
 
