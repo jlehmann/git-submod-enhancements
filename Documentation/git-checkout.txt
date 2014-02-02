@@ -8,12 +8,12 @@ git-checkout - Checkout a branch or paths to the working tree
 SYNOPSIS
 --------
 [verse]
-'git checkout' [-q] [-f] [-m] [<branch>]
-'git checkout' [-q] [-f] [-m] --detach [<branch>]
-'git checkout' [-q] [-f] [-m] [--detach] <commit>
-'git checkout' [-q] [-f] [-m] [[-b|-B|--orphan] <new_branch>] [<start_point>]
-'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] [<tree-ish>] [--] <paths>...
-'git checkout' [-p|--patch] [<tree-ish>] [--] [<paths>...]
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] [<branch>]
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] --detach [<branch>]
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] [--detach] <commit>
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] [[-b|-B|--orphan] <new_branch>] [<start_point>]
+'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] [--[no-]recurse-submodules] [<tree-ish>] [--] <paths>...
+'git checkout' [-p|--patch] [--[no-]recurse-submodules] [<tree-ish>] [--] [<paths>...]
 
 DESCRIPTION
 -----------
@@ -224,6 +224,8 @@ the conflicted merge in the specified paths.
 This means that you can use `git checkout -p` to selectively discard
 edits from your current working tree. See the ``Interactive Mode''
 section of linkgit:git-add[1] to learn how to operate the `--patch` mode.
+
+include::recurse-submodules-update.txt[]
 
 <branch>::
 	Branch to checkout; if it refers to a branch (i.e., a name that,
