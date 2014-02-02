@@ -97,6 +97,10 @@ OPTIONS
 --quiet::
 	Be quiet, only report errors.
 
+include::recurse-submodules-update.txt[]
++
+This option only makes sense together with `--hard` and `--merge` and is
+ignored when used without these options.
 
 EXAMPLES
 --------
