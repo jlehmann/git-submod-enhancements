@@ -1371,6 +1371,7 @@ static int check_ok_to_remove(const char *name, int len, int dtype,
 			      struct unpack_trees_options *o)
 {
 	const struct cache_entry *result;
+	char *name_copy, *separator;
 
 	/*
 	 * It may be that the 'lstat()' succeeded even though
@@ -1412,6 +1413,24 @@ static int check_ok_to_remove(const char *name, int len, int dtype,
 		if (result->ce_flags & CE_REMOVE)
 			return 0;
 	}
+
+	/*
+	 * If the path lies inside a to be added submodule it
+	 * is ok to remove it.
+	 */
+	name_copy = xstrdup(name);
+	while ((separator = strrchr(name_copy, '/'))) {
+		int i;
+		*separator = '\0';
+		for (i = 0; i < the_index.cache_nr; i++) {
+			struct cache_entry *ce = the_index.cache[i];
+			if (!strcmp(ce->name, name_copy) && S_ISGITLINK(ce->ce_mode)) {
+				free(name_copy);
+				return 0;
+			}
+		}
+	}
+	free(name_copy);
 
 	return o->gently ? -1 :
 		add_rejected_path(o, error_type, name);

@@ -28,6 +28,7 @@ int parse_update_recurse_submodules_arg(const char *opt, const char *arg);
 int option_parse_update_submodules(const struct option *opt,
 		const char *arg, int unset);
 int submodule_needs_update(const char *path);
+int populate_submodule(const char *path, unsigned char sha1[20], int force);
 int depopulate_submodule(const char *path);
 void show_submodule_summary(FILE *f, const char *path,
 		const char *line_prefix,
