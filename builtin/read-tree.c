@@ -15,6 +15,7 @@
 #include "builtin.h"
 #include "parse-options.h"
 #include "resolve-undo.h"
+#include "submodule.h"
 
 static int nr_trees;
 static int read_empty;
@@ -105,6 +106,8 @@ int cmd_read_tree(int argc, const char **argv, const char *unused_prefix)
 	struct tree_desc t[MAX_UNPACK_TREES];
 	struct unpack_trees_options opts;
 	int prefix_set = 0;
+	const char *recurse_submodules_default = "off";
+	int recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 	const struct option read_tree_options[] = {
 		{ OPTION_CALLBACK, 0, "index-output", NULL, N_("file"),
 		  N_("write resulting index to <file>"),
@@ -137,6 +140,12 @@ int cmd_read_tree(int argc, const char **argv, const char *unused_prefix)
 			    N_("skip applying sparse checkout filter"), 1),
 		OPT_SET_INT(0, "debug-unpack", &opts.debug_unpack,
 			    N_("debug unpack-trees"), 1),
+		{ OPTION_CALLBACK, 0, "recurse-submodules", &recurse_submodules,
+		  "checkout", "control recursive updating of submodules",
+		  PARSE_OPT_OPTARG, option_parse_update_submodules },
+		{ OPTION_STRING, 0, "recurse-submodules-default",
+		  &recurse_submodules_default, NULL,
+		  "default mode for recursion", PARSE_OPT_HIDDEN },
 		OPT_END()
 	};
 
@@ -145,6 +154,7 @@ int cmd_read_tree(int argc, const char **argv, const char *unused_prefix)
 	opts.src_index = &the_index;
 	opts.dst_index = &the_index;
 
+	gitmodules_config();
 	git_config(git_default_config, NULL);
 
 	argc = parse_options(argc, argv, unused_prefix, read_tree_options,
@@ -165,6 +175,10 @@ int cmd_read_tree(int argc, const char **argv, const char *unused_prefix)
 	 * mode.
 	 */
 
+	set_config_update_recurse_submodules(
+		parse_update_recurse_submodules_arg("--recurse-submodules-default",
+						    recurse_submodules_default),
+		recurse_submodules);
 	if (opts.reset || opts.merge || opts.prefix) {
 		if (read_cache_unmerged() && (opts.prefix || opts.merge))
 			die("You need to resolve your current index first");
