@@ -12,11 +12,30 @@
 #include "argv-array.h"
 #include "blob.h"
 
+/*
+ * When no --recurse-submodules option was passed, should git fetch
+ * from submodules where submodule.<name>.fetchRecurseSubmodules doesn't
+ * indicate what to do?
+ *
+ * Controlled by fetch.recurseSubmodules.  The default is determined by
+ * the --recurse-submodules-default option, which propagates
+ * --recurse-submodules from the parent git process when recursing.
+ */
+static int config_fetch_recurse_submodules = RECURSE_SUBMODULES_ON_DEMAND;
+
+/*
+ * When no --recurse-submodules option was passed, should git update the
+ * index and worktree within submodules (and in turn their submodules,
+ * etc)?
+ *
+ * Controlled by the --recurse-submodules-default option, which propagates
+ * --recurse-submodules from the parent git process when recursing.
+ */
+static int config_update_recurse_submodules = RECURSE_SUBMODULES_OFF;
+
 static struct string_list config_name_for_path;
 static struct string_list config_fetch_recurse_submodules_for_name;
 static struct string_list config_ignore_for_name;
-static int config_fetch_recurse_submodules = RECURSE_SUBMODULES_ON_DEMAND;
-static int config_update_recurse_submodules = RECURSE_SUBMODULES_OFF;
 static int option_update_recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 static struct string_list changed_submodule_paths;
 static int initialized_fetch_ref_tips;
@@ -400,8 +419,6 @@ int parse_update_recurse_submodules_arg(const char *opt, const char *arg)
 	case 0:
 		return RECURSE_SUBMODULES_OFF;
 	default:
-		if (!strcmp(arg, "checkout"))
-			return RECURSE_SUBMODULES_ON;
 		die("bad %s argument: %s", opt, arg);
 	}
 }
