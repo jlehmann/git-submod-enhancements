@@ -1057,8 +1057,10 @@ cmd_summary() {
 		do
 			# Always show modules deleted or type-changed (blob<->module)
 			test $status = D -o $status = T && echo "$sm_path" && continue
-			# Respect the ignore setting for --for-status.
-			if test -n "$for_status"
+			# Respect the ignore setting for --for-status unless
+			# --cached is used (we always want to show staged
+			# submodule modifications in the status output).
+			if test -n "$for_status" && test -z "$cached"
 			then
 				name=$(module_name "$sm_path")
 				ignore_config=$(get_submodule_config "$name" ignore none)

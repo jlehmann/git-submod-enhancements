@@ -1393,6 +1393,11 @@ Changes not staged for commit:
 
 	modified:   dir1/modified
 
+Submodule changes to be committed:
+
+* sm 4c2ba33...2fb508f (1):
+  > Add bar
+
 Untracked files:
   (use "git add <file>..." to include in what will be committed)
 
@@ -1513,6 +1518,12 @@ Changes not staged for commit:
   (use "git checkout -- <file>..." to discard changes in working directory)
 
 	modified:   dir1/modified
+
+Submodule changes to be committed:
+
+* sm 4c2ba33...2897915 (2):
+  > 2nd commit
+  > Add bar
 
 Untracked files not listed (use -u option to show untracked files)
 EOF
