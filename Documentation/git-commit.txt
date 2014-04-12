@@ -13,6 +13,7 @@ SYNOPSIS
 	   [-F <file> | -m <msg>] [--reset-author] [--allow-empty]
 	   [--allow-empty-message] [--no-verify] [-e] [--author=<author>]
 	   [--date=<date>] [--cleanup=<mode>] [--[no-]status]
+	   [--ignore-submodules[=<when>]]
 	   [-i | -o] [-S[<key-id>]] [--] [<file>...]
 
 DESCRIPTION
@@ -276,6 +277,12 @@ The possible options are:
 +
 The default can be changed using the status.showUntrackedFiles
 configuration variable documented in linkgit:git-config[1].
+
+--ignore-submodules[=<when>]::
+	Can be used to override any settings of the 'submodule.*.ignore'
+	option in linkgit:git-config[1] or linkgit:gitmodules[5].
+	<when> can be either "none", "dirty, "untracked" or "all", which
+	is the default.
 
 -v::
 --verbose::
