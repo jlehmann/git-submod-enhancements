@@ -184,10 +184,17 @@ reset_work_tree_to () {
 		git status -u -s >actual &&
 		test_must_be_empty actual &&
 		sha1=$(git rev-parse --revs-only HEAD:sub1) &&
-		if test -n "$sha1" &&
-		   test $(cd "sub1" && git rev-parse --verify "$sha1^{commit}")
+		if test "$sha1" = "0123456789012345678901234567890123456789"
 		then
-			git submodule update --init --recursive "sub1"
+			# Do update to the commit before the invalid commit
+			sha1=$(git rev-parse --revs-only HEAD^:sub1) &&
+			(cd sub1 && git checkout -q $sha1)
+		else
+			if test -n "$sha1" &&
+			    test $(cd "sub1" && git rev-parse --verify "$sha1^{commit}")
+			then
+				git submodule update --init --recursive "sub1"
+			fi
 		fi
 	)
 }
@@ -554,7 +561,9 @@ test_submodule_forced_switch () {
 			>sub1 &&
 			$command add_sub1 &&
 			test_superproject_content origin/add_sub1 &&
-			test_dir_is_empty sub1
+			test_dir_is_empty sub1 &&
+			git submodule update --init --recursive &&
+			test_submodule_content sub1 origin/add_sub1
 		)
 	'
 	# Replacing a tracked file with a submodule produces an empty
@@ -713,6 +722,430 @@ test_submodule_forced_switch () {
 			test_superproject_content origin/valid_sub1 &&
 			test_dir_is_empty sub1 &&
 			git submodule update --init --recursive &&
+			test_submodule_content sub1 origin/valid_sub1
+		)
+	'
+}
+
+# Test that submodule contents are updated to the commit recorded in the
+# superproject when switching between commits that change a
+# submodule. Superproject commits that add or remove a submodule will do the
+# same to the worktree, but removing a submodule containing a .git directory
+# will fail.
+test_submodule_recursive_switch () {
+	command="$1"
+	######################### Appearing submodule #########################
+	# Switching to a commit letting a submodule appear creates populated
+	# submodule ...
+	if test "$KNOWN_FAILURE_STASH_DOES_IGNORE_SUBMODULE_CHANGES" = 1
+	then
+		# Restoring stash fails to restore submodule index entry
+		RESULT="failure"
+	else
+		RESULT="success"
+	fi
+	test_expect_$RESULT "$command: added submodule creates populated directory" '
+		prolog &&
+		reset_work_tree_to no_submodule &&
+		(
+			cd submodule_update &&
+			git branch -t add_sub1 origin/add_sub1 &&
+			$command add_sub1 &&
+			test_superproject_content origin/add_sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# ... and doesn't care if it already exists ...
+	test_expect_$RESULT "$command: added submodule populates existing empty directory" '
+		prolog &&
+		reset_work_tree_to no_submodule &&
+		(
+			cd submodule_update &&
+			mkdir sub1 &&
+			git branch -t add_sub1 origin/add_sub1 &&
+			$command add_sub1 &&
+			test_superproject_content origin/add_sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# ... unless there is an untracked file in its place.
+	test_expect_success "$command: added submodule doesn't remove untracked unignored file with same name" '
+		prolog &&
+		reset_work_tree_to no_submodule &&
+		(
+			cd submodule_update &&
+			git branch -t add_sub1 origin/add_sub1 &&
+			>sub1 &&
+			test_must_fail $command add_sub1 &&
+			test_superproject_content origin/no_submodule &&
+			test_must_be_empty sub1
+		)
+	'
+	# Replacing a tracked file with a submodule produces a populated
+	# directory ...
+	test_expect_$RESULT "$command: replace tracked file with submodule creates populated directory" '
+		prolog &&
+		reset_work_tree_to replace_sub1_with_file &&
+		(
+			cd submodule_update &&
+			git branch -t replace_file_with_sub1 origin/replace_file_with_sub1 &&
+			$command replace_file_with_sub1 &&
+			test_superproject_content origin/replace_file_with_sub1 &&
+			test_submodule_content sub1 origin/replace_file_with_sub1
+		)
+	'
+	# ... as does removing a directory with tracked files with a
+	# submodule.
+	if test "$KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR" = 1
+	then
+		# Non fast-forward merges fail with "Directory sub1 doesn't
+		# exist. sub1" because the empty submodule directory is not
+		# created
+		RESULT="failure"
+	else
+		RESULT="success"
+	fi
+	test_expect_$RESULT "$command: replace directory with submodule populates it" '
+		prolog &&
+		reset_work_tree_to replace_sub1_with_directory &&
+		(
+			cd submodule_update &&
+			git branch -t replace_directory_with_sub1 origin/replace_directory_with_sub1 &&
+			$command replace_directory_with_sub1 &&
+			test_superproject_content origin/replace_directory_with_sub1 &&
+			test_submodule_content sub1 origin/replace_directory_with_sub1
+		)
+	'
+
+	######################## Disappearing submodule #######################
+	# Removing a submodule removes its work tree ...
+	if test "$KNOWN_FAILURE_STASH_DOES_IGNORE_SUBMODULE_CHANGES" = 1
+	then
+		RESULT="failure"
+	else
+		RESULT="success"
+	fi
+	test_expect_$RESULT "$command: removed submodule removes submodule directory and its contents" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t remove_sub1 origin/remove_sub1 &&
+			$command remove_sub1 &&
+			test_superproject_content origin/remove_sub1 &&
+			test_path_is_missing sub1
+		)
+	'
+	# ... unless it contains a .git directory.
+	test_expect_$RESULT "$command: removed submodule leaves submodule containing a .git directory alone" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t remove_sub1 origin/remove_sub1 &&
+			replace_gitfile_with_git_dir sub1 &&
+			$command remove_sub1 &&
+			test_superproject_content origin/remove_sub1 &&
+			test_git_directory_is_unchanged sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# Replacing a submodule with files in a directory succeeds as the
+	# submodule work tree is removed ...
+	test_expect_success "$command: replace submodule with a directory succeeds" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_directory origin/replace_sub1_with_directory &&
+			$command replace_sub1_with_directory &&
+			test_superproject_content origin/replace_sub1_with_directory
+		)
+	'
+	# ... while it fails when it contains a .git directory.
+	test_expect_success "$command: replace submodule containing a .git directory with a directory must fail" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_directory origin/replace_sub1_with_directory &&
+			replace_gitfile_with_git_dir sub1 &&
+			test_must_fail $command replace_sub1_with_directory &&
+			test_superproject_content origin/add_sub1 &&
+			test_git_directory_is_unchanged sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# Replacing it with a file succeeds ...
+	test_expect_success "$command: replace submodule with a file succeeds" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_file origin/replace_sub1_with_file &&
+			$command replace_sub1_with_file &&
+			test_superproject_content origin/replace_sub1_with_file
+		)
+	'
+	# ... but fails because it could destroy unpushed parts of submodule
+	# history if that still uses a .git directory.
+	test_expect_success "$command: replace submodule containing a .git directory with a file must fail" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_file origin/replace_sub1_with_file &&
+			replace_gitfile_with_git_dir sub1 &&
+			test_must_fail $command replace_sub1_with_file &&
+			test_superproject_content origin/add_sub1 &&
+			test_git_directory_is_unchanged sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+
+	########################## Modified submodule #########################
+	# Updating a submodule sha1 updates the submodule's work tree
+	if test "$KNOWN_FAILURE_CHERRY_PICK_SEES_EMPTY_COMMIT" = 1
+	then
+		# When cherry picking a SHA-1 update for an ignored submodule
+		# the commit incorrectly fails with "The previous cherry-pick
+		# is now empty, possibly due to conflict resolution."
+		RESULT="failure"
+	else
+		RESULT="success"
+	fi
+	test_expect_$RESULT "$command: modified submodule updates submodule work tree" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t modify_sub1 origin/modify_sub1 &&
+			$command modify_sub1 &&
+			test_superproject_content origin/modify_sub1 &&
+			test_submodule_content sub1 origin/modify_sub1
+		)
+	'
+
+	# Updating a submodule to an invalid sha1 doesn't update the
+	# submodule's work tree, subsequent update will fail
+	test_expect_$RESULT "$command: modified submodule does neither update superproject nor submodule work tree to invalid commit" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t invalid_sub1 origin/invalid_sub1 &&
+			test_must_fail $command invalid_sub1 &&
+			test_superproject_content origin/add_sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# Updating a submodule from an invalid sha1 updates the submodule's
+	# work tree
+	test_expect_$RESULT "$command: modified submodule updates submodule work tree from invalid commit" '
+		prolog &&
+		reset_work_tree_to invalid_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t valid_sub1 origin/valid_sub1 &&
+			$command valid_sub1 &&
+			test_superproject_content origin/valid_sub1 &&
+			test_submodule_content sub1 origin/valid_sub1
+		)
+	'
+}
+
+# Test that submodule contents are currently according to the commit recorded
+# in the superproject when switching between commits that change a submodule,
+# but throwing away local changes in the superproject and/or the submodules
+# is allowed unless we would remove a .git directory in a
+# submodule. Superproject commits that add or remove a submodule will do the
+# same to the worktree, but removing a submodule containing a .git directory
+# will fail.
+test_submodule_forced_recursive_switch () {
+	command="$1"
+	######################### Appearing submodule #########################
+	# Switching to a commit letting a submodule appear creates populated
+	# submodule ...
+	test_expect_success "$command: added submodule creates populated directory" '
+		prolog &&
+		reset_work_tree_to no_submodule &&
+		(
+			cd submodule_update &&
+			git branch -t add_sub1 origin/add_sub1 &&
+			$command add_sub1 &&
+			test_superproject_content origin/add_sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# ... and doesn't care if it already exists ...
+	test_expect_success "$command: added submodule populates existing empty directory" '
+		prolog &&
+		reset_work_tree_to no_submodule &&
+		(
+			cd submodule_update &&
+			git branch -t add_sub1 origin/add_sub1 &&
+			mkdir sub1 &&
+			$command add_sub1 &&
+			test_superproject_content origin/add_sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# ... or if there is an untracked file in its place.
+	test_expect_success "$command: added submodule does remove untracked unignored file with same name when forced" '
+		prolog &&
+		reset_work_tree_to no_submodule &&
+		(
+			cd submodule_update &&
+			git branch -t add_sub1 origin/add_sub1 &&
+			>sub1 &&
+			$command add_sub1 &&
+			test_superproject_content origin/add_sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# Replacing a tracked file with a submodule produces a populated
+	# directory ...
+	test_expect_success "$command: replace tracked file with submodule creates populated directory" '
+		prolog &&
+		reset_work_tree_to replace_sub1_with_file &&
+		(
+			cd submodule_update &&
+			git branch -t replace_file_with_sub1 origin/replace_file_with_sub1 &&
+			$command replace_file_with_sub1 &&
+			test_superproject_content origin/replace_file_with_sub1 &&
+			test_submodule_content sub1 origin/replace_file_with_sub1
+		)
+	'
+	# ... as does removing a directory with tracked files with a
+	# submodule.
+	test_expect_success "$command: replace directory with submodule populates it" '
+		prolog &&
+		reset_work_tree_to replace_sub1_with_directory &&
+		(
+			cd submodule_update &&
+			git branch -t replace_directory_with_sub1 origin/replace_directory_with_sub1 &&
+			$command replace_directory_with_sub1 &&
+			test_superproject_content origin/replace_directory_with_sub1 &&
+			test_submodule_content sub1 origin/replace_directory_with_sub1
+		)
+	'
+
+	######################## Disappearing submodule #######################
+	# Removing a submodule removes its work tree ...
+	test_expect_success "$command: removed submodule removes submodule directory and its contents" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t remove_sub1 origin/remove_sub1 &&
+			$command remove_sub1 &&
+			test_superproject_content origin/remove_sub1 &&
+			test_path_is_missing sub1
+		)
+	'
+	# ... unless it contains a .git directory.
+	test_expect_success "$command: removed submodule leaves submodule containing a .git directory alone" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t remove_sub1 origin/remove_sub1 &&
+			replace_gitfile_with_git_dir sub1 &&
+			$command remove_sub1 &&
+			test_superproject_content origin/remove_sub1 &&
+			test_git_directory_is_unchanged sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# Replacing a submodule with files in a directory succeeds as the
+	# submodule work tree is removed ...
+	test_expect_success "$command: replace submodule with a directory succeeds" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_directory origin/replace_sub1_with_directory &&
+			$command replace_sub1_with_directory &&
+			test_superproject_content origin/replace_sub1_with_directory
+		)
+	'
+	# ... while it fails when it contains a .git directory.
+	test_expect_failure "$command: replace submodule containing a .git directory with a directory must fail" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_directory origin/replace_sub1_with_directory &&
+			replace_gitfile_with_git_dir sub1 &&
+			test_must_fail $command replace_sub1_with_directory &&
+			test_superproject_content origin/add_sub1 &&
+			test_git_directory_is_unchanged sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# Replacing it with a file succeeds ...
+	test_expect_success "$command: replace submodule with a file succeeds" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_file origin/replace_sub1_with_file &&
+			$command replace_sub1_with_file &&
+			test_superproject_content origin/replace_sub1_with_file
+		)
+	'
+	# ... but fails because it could destroy unpushed parts of submodule
+	# history if that still uses a .git directory.
+	test_expect_failure "$command: replace submodule containing a .git directory with a file must fail" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t replace_sub1_with_file origin/replace_sub1_with_file &&
+			replace_gitfile_with_git_dir sub1 &&
+			test_must_fail $command replace_sub1_with_file &&
+			test_superproject_content origin/add_sub1 &&
+			test_git_directory_is_unchanged sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+
+	########################## Modified submodule #########################
+	# Updating a submodule sha1 updates the submodule's work tree
+	test_expect_success "$command: modified submodule updates submodule work tree" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t modify_sub1 origin/modify_sub1 &&
+			$command modify_sub1 &&
+			test_superproject_content origin/modify_sub1 &&
+			test_submodule_content sub1 origin/modify_sub1
+		)
+	'
+	# Updating a submodule to an invalid sha1 doesn't update the
+	# submodule's work tree, subsequent update will fail
+	test_expect_success "$command: modified submodule does update superproject but leaves submodule work tree alone when forced to an invalid commit" '
+		prolog &&
+		reset_work_tree_to add_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t invalid_sub1 origin/invalid_sub1 &&
+			$command invalid_sub1 &&
+			test_superproject_content origin/invalid_sub1 &&
+			test_submodule_content sub1 origin/add_sub1
+		)
+	'
+	# Updating a submodule from an invalid sha1 updates the submodule's
+	# work tree
+	test_expect_success "$command: modified submodule updates submodule work tree from invalid commit" '
+		prolog &&
+		reset_work_tree_to invalid_sub1 &&
+		(
+			cd submodule_update &&
+			git branch -t valid_sub1 origin/valid_sub1 &&
+			$command valid_sub1 &&
+			test_superproject_content origin/valid_sub1 &&
 			test_submodule_content sub1 origin/valid_sub1
 		)
 	'
