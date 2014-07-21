@@ -1,4 +1,33 @@
+# Helper functions to check if submodules are updated as expected in the work
+# tree.
+#
+# The following commands still need to be covered:
+#
+# Porcelain
+# =========
+# - with conflicts
+#   am, checkout -m, cherry-pick, merge, pull, rebase, reset --merge, revert & stash apply
+#
+# - forced
+#   merge -X theirs
+#
+# Plumbing
+# ========
+# - with conflicts
+#   apply -3 & read-tree -m -u
+#
+# The submodule update script
+# ===========================
+# --update/merge/rebase: Behavior is unaffected by all auto config options
+
+
+
 # Create a submodule layout used for all tests below.
+#
+# TODO: For recursive update test that modifications inside a submodule are
+#       preserved
+#
+# TODO: For recursive update test submodule inside another submodule too
 #
 # The following use cases are covered:
 # - New submodule (no_submodule => add_sub1)
@@ -220,6 +249,16 @@ test_submodule_content () {
 # Removing a submodule containing a .git directory must fail even when forced
 # to protect the history!
 #
+# TODO: For recursive update the following conditions are tested:
+# - Submodule update:
+#   - allow trivial merges (update may only change unmodified or untracked
+#     files that aren't ignored), skip this test when forced
+#
+# - Submodule removal:
+#   - contains untracked ignored files (always succeeds)
+#   - contains untracked but not ignored files (fails unless forced)
+#   - contains modified tracked files (fails unless forced)
+#   - contains .git directory (always fails, even when forced)
 
 # Test that submodule contents are currently not updated when switching
 # between commits that change a submodule.
