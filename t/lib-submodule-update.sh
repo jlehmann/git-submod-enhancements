@@ -749,8 +749,7 @@ test_submodule_recursive_switch () {
 		)
 	'
 	# ... and doesn't care if it already exists ...
-# TODO: what should happen here ???
-	test_expect_$RESULT "$command: added submodule leaves existing empty directory alone" '
+	test_expect_$RESULT "$command: added submodule populates existing empty directory" '
 		prolog &&
 		reset_work_tree_to no_submodule &&
 		(
@@ -883,7 +882,7 @@ test_submodule_recursive_switch () {
 	'
 	# ... but fails because it could destroy unpushed parts of submodule
 	# history if that still uses a .git directory.
-	test_expect_failure "$command: replace submodule containing a .git directory with a file must fail" '
+	test_expect_success "$command: replace submodule containing a .git directory with a file must fail" '
 		prolog &&
 		reset_work_tree_to add_sub1 &&
 		(
@@ -922,16 +921,14 @@ test_submodule_recursive_switch () {
 
 	# Updating a submodule to an invalid sha1 doesn't update the
 	# submodule's work tree, subsequent update will fail
-	test_expect_$RESULT "$command: modified submodule does not update submodule work tree to invalid commit" '
+	test_expect_$RESULT "$command: modified submodule does neither update superproject nor submodule work tree to invalid commit" '
 		prolog &&
 		reset_work_tree_to add_sub1 &&
 		(
 			cd submodule_update &&
 			git branch -t invalid_sub1 origin/invalid_sub1 &&
 			test_must_fail $command invalid_sub1 &&
-			test_superproject_content origin/invalid_sub1 &&
-			test_submodule_content sub1 origin/add_sub1 &&
-			test_must_fail git submodule update &&
+			test_superproject_content origin/add_sub1 &&
 			test_submodule_content sub1 origin/add_sub1
 		)
 	'
@@ -974,8 +971,7 @@ test_submodule_forced_recursive_switch () {
 		)
 	'
 	# ... and doesn't care if it already exists ...
-# TODO: what should happen here ???
-	test_expect_success "$command: added submodule leaves existing empty directory alone" '
+	test_expect_success "$command: added submodule populates existing empty directory" '
 		prolog &&
 		reset_work_tree_to no_submodule &&
 		(
@@ -987,7 +983,7 @@ test_submodule_forced_recursive_switch () {
 			test_submodule_content sub1 origin/add_sub1
 		)
 	'
-	# ... unless there is an untracked file in its place.
+	# ... or if there is an untracked file in its place.
 	test_expect_success "$command: added submodule does remove untracked unignored file with same name when forced" '
 		prolog &&
 		reset_work_tree_to no_submodule &&
@@ -1093,7 +1089,7 @@ test_submodule_forced_recursive_switch () {
 	'
 	# ... but fails because it could destroy unpushed parts of submodule
 	# history if that still uses a .git directory.
-	test_expect_failure "$command: replace submodule containing a .git directory with a file must fail" '
+	test_expect_success "$command: replace submodule containing a .git directory with a file must fail" '
 		prolog &&
 		reset_work_tree_to add_sub1 &&
 		(
@@ -1122,7 +1118,7 @@ test_submodule_forced_recursive_switch () {
 	'
 	# Updating a submodule to an invalid sha1 doesn't update the
 	# submodule's work tree, subsequent update will fail
-	test_expect_success "$command: modified submodule does not update submodule work tree to invalid commit" '
+	test_expect_success "$command: modified submodule does update superproject but leaves submodule work tree alone when forced to an invalid commit" '
 		prolog &&
 		reset_work_tree_to add_sub1 &&
 		(
