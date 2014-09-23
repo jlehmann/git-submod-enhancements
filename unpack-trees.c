@@ -1276,9 +1276,19 @@ static int verify_uptodate_submodule(const struct cache_entry *old,
 		unsigned changed = ie_match_stat(o->src_index, old, &st, CE_MATCH_IGNORE_VALID|CE_MATCH_IGNORE_SKIP_WORKTREE);
 		if (!changed) {
 			if (!S_ISGITLINK(old->ce_mode) ||
-			    !submodule_needs_update(new->name) ||
-			    is_submodule_checkout_safe(new->name, new->sha1))
+			    !submodule_needs_update(new->name))
 				return 0;
+			/* old is a submodule configured to be updated */
+			if (S_ISGITLINK(new->ce_mode)) {
+				/* It stays a submodule */
+				if (is_submodule_checkout_safe(new->name, new->sha1))
+					return 0;
+			} else {
+				/* It will be replaced by a file */
+				if (submodule_uses_gitfile(new->name) &&
+				    !is_submodule_modified(new->name, 0))
+					return 0;
+			}
 		} else
 			if (S_ISGITLINK(old->ce_mode) && !submodule_needs_update(new->name))
 				return 0;
