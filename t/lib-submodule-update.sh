@@ -745,6 +745,7 @@ test_submodule_recursive_switch () {
 			git branch -t add_sub1 origin/add_sub1 &&
 			$command add_sub1 &&
 			test_superproject_content origin/add_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/add_sub1
 		)
 	'
@@ -758,6 +759,7 @@ test_submodule_recursive_switch () {
 			git branch -t add_sub1 origin/add_sub1 &&
 			$command add_sub1 &&
 			test_superproject_content origin/add_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/add_sub1
 		)
 	'
@@ -784,6 +786,7 @@ test_submodule_recursive_switch () {
 			git branch -t replace_file_with_sub1 origin/replace_file_with_sub1 &&
 			$command replace_file_with_sub1 &&
 			test_superproject_content origin/replace_file_with_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/replace_file_with_sub1
 		)
 	'
@@ -806,6 +809,7 @@ test_submodule_recursive_switch () {
 			git branch -t replace_directory_with_sub1 origin/replace_directory_with_sub1 &&
 			$command replace_directory_with_sub1 &&
 			test_superproject_content origin/replace_directory_with_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/replace_directory_with_sub1
 		)
 	'
@@ -967,6 +971,7 @@ test_submodule_forced_recursive_switch () {
 			git branch -t add_sub1 origin/add_sub1 &&
 			$command add_sub1 &&
 			test_superproject_content origin/add_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/add_sub1
 		)
 	'
@@ -980,6 +985,7 @@ test_submodule_forced_recursive_switch () {
 			mkdir sub1 &&
 			$command add_sub1 &&
 			test_superproject_content origin/add_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/add_sub1
 		)
 	'
@@ -993,6 +999,7 @@ test_submodule_forced_recursive_switch () {
 			>sub1 &&
 			$command add_sub1 &&
 			test_superproject_content origin/add_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/add_sub1
 		)
 	'
@@ -1006,6 +1013,7 @@ test_submodule_forced_recursive_switch () {
 			git branch -t replace_file_with_sub1 origin/replace_file_with_sub1 &&
 			$command replace_file_with_sub1 &&
 			test_superproject_content origin/replace_file_with_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/replace_file_with_sub1
 		)
 	'
@@ -1019,6 +1027,7 @@ test_submodule_forced_recursive_switch () {
 			git branch -t replace_directory_with_sub1 origin/replace_directory_with_sub1 &&
 			$command replace_directory_with_sub1 &&
 			test_superproject_content origin/replace_directory_with_sub1 &&
+			git submodule update --init && 	# TODO: remove this when we can populate new submodules
 			test_submodule_content sub1 origin/replace_directory_with_sub1
 		)
 	'
