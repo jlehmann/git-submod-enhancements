@@ -20,6 +20,7 @@
 #include "xdiff-interface.h"
 #include "ll-merge.h"
 #include "rerere.h"
+#include "submodule.h"
 
 /*
  *  --check turns on checking that the working tree matches the
@@ -55,6 +56,8 @@ static int unsafe_paths;
 static const char *fake_ancestor;
 static int line_termination = '\n';
 static unsigned int p_context = UINT_MAX;
+static const char *recurse_submodules_default = "off";
+static int recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 static const char * const apply_usage[] = {
 	N_("git apply [<options>] [<patch>...]"),
 	NULL
@@ -4584,11 +4587,18 @@ int cmd_apply(int argc, const char **argv, const char *prefix_)
 		{ OPTION_CALLBACK, 0, "directory", NULL, N_("root"),
 			N_("prepend <root> to all filenames"),
 			0, option_parse_directory },
+		{ OPTION_CALLBACK, 0, "recurse-submodules", &recurse_submodules,
+		  "checkout", "control recursive updating of submodules",
+		  PARSE_OPT_OPTARG, option_parse_update_submodules },
+		{ OPTION_STRING, 0, "recurse-submodules-default",
+		  &recurse_submodules_default, NULL,
+		  "default mode for recursion", PARSE_OPT_HIDDEN },
 		OPT_END()
 	};
 
 	prefix = prefix_;
 	prefix_length = prefix ? strlen(prefix) : 0;
+	gitmodules_config();
 	git_apply_config();
 	if (apply_default_whitespace)
 		parse_whitespace_option(apply_default_whitespace);
@@ -4598,6 +4608,10 @@ int cmd_apply(int argc, const char **argv, const char *prefix_)
 	argc = parse_options(argc, argv, prefix, builtin_apply_options,
 			apply_usage, 0);
 
+	set_config_update_recurse_submodules(
+		parse_update_recurse_submodules_arg("--recurse-submodules-default",
+						    recurse_submodules_default),
+		recurse_submodules);
 	if (apply_with_reject && threeway)
 		die("--reject and --3way cannot be used together.");
 	if (cached && threeway)
