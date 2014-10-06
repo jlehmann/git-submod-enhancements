@@ -11,7 +11,8 @@ SYNOPSIS
 [verse]
 'git merge' [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
 	[-s <strategy>] [-X <strategy-option>] [-S[<key-id>]]
-	[--[no-]rerere-autoupdate] [-m <msg>] [<commit>...]
+	[--[no-]rerere-autoupdate] [--recurse-submodules]
+	[-m <msg>] [<commit>...]
 'git merge' <msg> HEAD <commit>...
 'git merge' --abort
 
