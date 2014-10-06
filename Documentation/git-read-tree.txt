@@ -12,6 +12,7 @@ SYNOPSIS
 'git read-tree' [[-m [--trivial] [--aggressive] | --reset | --prefix=<prefix>]
 		[-u [--exclude-per-directory=<gitignore>] | -i]]
 		[--index-output=<file>] [--no-sparse-checkout]
+		[--[no-]recurse-submodules]
 		(--empty | <tree-ish1> [<tree-ish2> [<tree-ish3>]])
 
 
