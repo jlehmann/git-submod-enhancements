@@ -8,7 +8,8 @@ git-revert - Revert some existing commits
 SYNOPSIS
 --------
 [verse]
-'git revert' [--[no-]edit] [-n] [-m parent-number] [-s] [-S[<key-id>]] <commit>...
+'git revert' [--[no-]edit] [-n] [-m parent-number] [-s] [-S[<key-id>]]
+	     [--recurse-submodules] <commit>...
 'git revert' --continue
 'git revert' --quit
 'git revert' --abort
@@ -97,6 +98,8 @@ effect to your index in a row.
 --strategy-option=<option>::
 	Pass the merge strategy-specific option through to the
 	merge strategy.  See linkgit:git-merge[1] for details.
+
+include::recurse-submodules-update.txt[]
 
 SEQUENCER SUBCOMMANDS
 ---------------------
