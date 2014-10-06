@@ -9,7 +9,7 @@ SYNOPSIS
 --------
 [verse]
 'git cherry-pick' [--edit] [-n] [-m parent-number] [-s] [-x] [--ff]
-		  [-S[<key-id>]] <commit>...
+		  [-S[<key-id>]] [--recurse-submodules] <commit>...
 'git cherry-pick' --continue
 'git cherry-pick' --quit
 'git cherry-pick' --abort
@@ -144,6 +144,8 @@ effect to your index in a row.
 --strategy-option=<option>::
 	Pass the merge strategy-specific option through to the
 	merge strategy.  See linkgit:git-merge[1] for details.
+
+include::recurse-submodules-update.txt[]
 
 SEQUENCER SUBCOMMANDS
 ---------------------
