@@ -270,7 +270,7 @@ then
 Warning: fast-forwarding your working tree from
 Warning: commit \$orig_head." >&2
 	git update-index -q --refresh
-	git read-tree -u -m "$orig_head" "$curr_head" ||
+	git read-tree $recurse_submodules -u -m "$orig_head" "$curr_head" ||
 		die "$(eval_gettext "Cannot fast-forward your working tree.
 After making sure that you saved anything precious from
 $ git diff \$orig_head
@@ -309,7 +309,7 @@ then
 	# lose index/worktree changes that the user already made on
 	# the unborn branch.
 	empty_tree=4b825dc642cb6eb9a060e54bf8d69288fbee4904
-	git read-tree -m -u $empty_tree $merge_head &&
+	git read-tree $recurse_submodules -m -u $empty_tree $merge_head &&
 	git update-ref -m "initial pull" HEAD $merge_head "$curr_head"
 	exit
 fi
@@ -326,12 +326,12 @@ fi
 merge_name=$(git fmt-merge-msg $log_arg <"$GIT_DIR/FETCH_HEAD") || exit
 case "$rebase" in
 true)
-	eval="git-rebase $diffstat $strategy_args $merge_args $rebase_args $verbosity"
+	eval="git-rebase $recurse_submodules $diffstat $strategy_args $merge_args $rebase_args $verbosity"
 	eval="$eval $gpg_sign_args"
 	eval="$eval --onto $merge_head ${oldremoteref:-$merge_head}"
 	;;
 *)
-	eval="git-merge $diffstat $no_commit $verify_signatures $edit $squash $no_ff $ff_only"
+	eval="git-merge $recurse_submodules $diffstat $no_commit $verify_signatures $edit $squash $no_ff $ff_only"
 	eval="$eval $log_arg $strategy_args $merge_args $verbosity $progress"
 	eval="$eval $gpg_sign_args"
 	eval="$eval \"\$merge_name\" HEAD $merge_head"
