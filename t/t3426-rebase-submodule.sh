@@ -43,4 +43,42 @@ KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR=1
 # directory "sub1" exists, but we reuse the suppression added for merge here
 test_submodule_switch "git_rebase_interactive"
 
+git_rebase_recursive () {
+	git status -su >expect &&
+	ls -1pR * >>expect &&
+	git checkout -b ours HEAD &&
+	echo x >>file1 &&
+	git add file1 &&
+	git commit -m add_x &&
+	git revert HEAD &&
+	git status -su >actual &&
+	ls -1pR * >>actual &&
+	test_cmp expect actual &&
+	git rebase --recurse-submodules "$1"
+}
+
+KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR=
+test_submodule_recursive_switch "git_rebase_recursive"
+
+git_rebase_interactive_recursive () {
+	git status -su >expect &&
+	ls -1pR * >>expect &&
+	git checkout -b ours HEAD &&
+	echo x >>file1 &&
+	git add file1 &&
+	git commit -m add_x &&
+	git revert HEAD &&
+	git status -su >actual &&
+	ls -1pR * >>actual &&
+	test_cmp expect actual &&
+	set_fake_editor &&
+	echo "fake-editor.sh" >.git/info/exclude &&
+	git rebase --recurse-submodules -i "$1"
+}
+
+KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR=1
+# The real reason "replace directory with submodule" fails is because a
+# directory "sub1" exists, but we reuse the suppression added for merge here
+test_submodule_recursive_switch "git_rebase_interactive_recursive"
+
 test_done
