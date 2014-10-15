@@ -184,10 +184,17 @@ reset_work_tree_to () {
 		git status -u -s >actual &&
 		test_must_be_empty actual &&
 		sha1=$(git rev-parse --revs-only HEAD:sub1) &&
-		if test -n "$sha1" &&
-		   test $(cd "sub1" && git rev-parse --verify "$sha1^{commit}")
+		if test "$sha1" = "0123456789012345678901234567890123456789"
 		then
-			git submodule update --init --recursive "sub1"
+			# Do update to the commit before the invalid commit
+			sha1=$(git rev-parse --revs-only HEAD^:sub1) &&
+			(cd sub1 && git checkout -q $sha1)
+		else
+			if test -n "$sha1" &&
+			    test $(cd "sub1" && git rev-parse --verify "$sha1^{commit}")
+			then
+				git submodule update --init --recursive "sub1"
+			fi
 		fi
 	)
 }
