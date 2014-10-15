@@ -29,6 +29,7 @@ X,strategy-option=! pass the argument through to the merge strategy
 stat!              display a diffstat of what changed upstream
 n,no-stat!         do not show diffstat of what changed upstream
 verify             allow pre-rebase hook to run
+recurse-submodules update the work tree of all initialized submodules too
 rerere-autoupdate  allow rerere to update index with resolved conflicts
 root!              rebase all reachable commits up to the root(s)
 autosquash         move commits that begin with squash!/fixup! under -i
@@ -74,6 +75,7 @@ fork_point=auto
 git_am_opt=
 rebase_root=
 force_rebase=
+recurse_submodules=
 allow_rerere_autoupdate=
 # Non-empty if a rebase was in progress when 'git rebase' was invoked
 in_progress=
@@ -108,6 +110,8 @@ read_basic_state () {
 	test -f "$state_dir"/strategy && strategy="$(cat "$state_dir"/strategy)"
 	test -f "$state_dir"/strategy_opts &&
 		strategy_opts="$(cat "$state_dir"/strategy_opts)"
+	test -f "$state_dir"/recurse_submodules &&
+		recurse_submodules="$(cat "$state_dir"/recurse_submodules)"
 	test -f "$state_dir"/allow_rerere_autoupdate &&
 		allow_rerere_autoupdate="$(cat "$state_dir"/allow_rerere_autoupdate)"
 	test -f "$state_dir"/gpg_sign_opt &&
@@ -123,6 +127,8 @@ write_basic_state () {
 	test -n "$strategy" && echo "$strategy" > "$state_dir"/strategy
 	test -n "$strategy_opts" && echo "$strategy_opts" > \
 		"$state_dir"/strategy_opts
+	test -n "$recurse_submodules" && echo "$recurse_submodules" > \
+		"$state_dir"/recurse_submodules
 	test -n "$allow_rerere_autoupdate" && echo "$allow_rerere_autoupdate" > \
 		"$state_dir"/allow_rerere_autoupdate
 	test -n "$gpg_sign_opt" && echo "$gpg_sign_opt" > "$state_dir"/gpg_sign_opt
@@ -326,6 +332,9 @@ do
 		;;
 	--force-rebase|--no-ff)
 		force_rebase=t
+		;;
+	--recurse-submodules|--no-recurse-submodules)
+		recurse_submodules="$1"
 		;;
 	--rerere-autoupdate|--no-rerere-autoupdate)
 		allow_rerere_autoupdate="$1"
@@ -582,7 +591,7 @@ then
 		# Lazily switch to the target branch if needed...
 		test -z "$switch_to" ||
 		GIT_REFLOG_ACTION="$GIT_REFLOG_ACTION: checkout $switch_to" \
-			git checkout "$switch_to" --
+			git checkout $recurse_submodules "$switch_to" --
 		say "$(eval_gettext "Current branch \$branch_name is up to date.")"
 		finish_rebase
 		exit 0
@@ -610,7 +619,7 @@ test "$type" = interactive && run_specific_rebase
 say "$(gettext "First, rewinding head to replay your work on top of it...")"
 
 GIT_REFLOG_ACTION="$GIT_REFLOG_ACTION: checkout $onto_name" \
-	git checkout -q "$onto^0" || die "could not detach HEAD"
+	git checkout $recurse_submodules -q "$onto^0" || die "could not detach HEAD"
 git update-ref ORIG_HEAD $orig_head
 
 # If the $onto is a proper descendant of the tip of the branch, then
