@@ -29,4 +29,22 @@ KNOWN_FAILURE_CHERRY_PICK_SEES_EMPTY_COMMIT=1
 KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR=1
 test_submodule_switch "git_revert"
 
+git_revert_recursive () {
+	git status -su >expect &&
+	ls -1pR * >>expect &&
+	tar czf "$TRASH_DIRECTORY/tmp.tgz" * &&
+	git checkout "$1" &&
+	git revert HEAD &&
+	rm -rf * &&
+	tar xzf "$TRASH_DIRECTORY/tmp.tgz" &&
+	git status -su >actual &&
+	ls -1pR * >>actual &&
+	test_cmp expect actual &&
+	git revert --recurse-submodules HEAD
+}
+
+KNOWN_FAILURE_CHERRY_PICK_SEES_EMPTY_COMMIT=
+KNOWN_FAILURE_NOFF_MERGE_DOESNT_CREATE_EMPTY_SUBMODULE_DIR=
+test_submodule_recursive_switch "git_revert_recursive"
+
 test_done

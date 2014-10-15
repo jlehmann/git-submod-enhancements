@@ -71,14 +71,11 @@ test_submodule_switch "git checkout"
 
 test_submodule_forced_switch "git checkout -f"
 
-#
-# TODO: replace the following tests with:
-#
-# test_submodule_switch "git checkout --recurse-submodules"
-#
-# test_submodule_forced_switch "git checkout -f --recurse-submodules"
-#
-# after all relevant cases are handled there too
+test_submodule_recursive_switch "git checkout --recurse-submodules"
+
+test_submodule_forced_recursive_switch "git checkout -f --recurse-submodules"
+
+# TODO: Test that all following relevant cases are handled above
 
 submodule_creation_must_succeed() {
 	# checkout base ($1)
