@@ -186,8 +186,9 @@ reset_work_tree_to () {
 		sha1=$(git rev-parse --revs-only HEAD:sub1) &&
 		if test "$sha1" = "0123456789012345678901234567890123456789"
 		then
-			# Do update to the commit before the invalid commit
-			sha1=$(git rev-parse --revs-only HEAD^:sub1) &&
+			# Update to a commit unrelated to the invalid commit
+			test_must_fail git submodule update --init "sub1" &&
+			sha1=$(git rev-parse --revs-only origin/modify_sub1:sub1) &&
 			(cd sub1 && git checkout -q $sha1)
 		else
 			if test -n "$sha1" &&
@@ -509,7 +510,7 @@ test_submodule_switch () {
 			git branch -t valid_sub1 origin/valid_sub1 &&
 			$command valid_sub1 &&
 			test_superproject_content origin/valid_sub1 &&
-			test_dir_is_empty sub1 &&
+			test_submodule_content sub1 origin/modify_sub1 &&
 			git submodule update --init --recursive &&
 			test_submodule_content sub1 origin/valid_sub1
 		)
@@ -720,7 +721,7 @@ test_submodule_forced_switch () {
 			git branch -t valid_sub1 origin/valid_sub1 &&
 			$command valid_sub1 &&
 			test_superproject_content origin/valid_sub1 &&
-			test_dir_is_empty sub1 &&
+			test_submodule_content sub1 origin/modify_sub1 &&
 			git submodule update --init --recursive &&
 			test_submodule_content sub1 origin/valid_sub1
 		)
@@ -947,9 +948,9 @@ test_submodule_recursive_switch () {
 		(
 			cd submodule_update &&
 			git branch -t valid_sub1 origin/valid_sub1 &&
-			$command valid_sub1 &&
-			test_superproject_content origin/valid_sub1 &&
-			test_submodule_content sub1 origin/valid_sub1
+			test_must_fail $command valid_sub1 &&
+			test_superproject_content origin/invalid_sub1 &&
+			test_submodule_content sub1 origin/modify_sub1
 		)
 	'
 }
@@ -1125,13 +1126,13 @@ test_submodule_forced_recursive_switch () {
 	'
 	# Updating a submodule to an invalid sha1 doesn't update the
 	# submodule's work tree, subsequent update will fail
-	test_expect_success "$command: modified submodule does update superproject but leaves submodule work tree alone when forced to an invalid commit" '
+	test_expect_success "$command: modified submodule does update superproject but leaves submodule work tree alone and fails when forced to an invalid commit" '
 		prolog &&
 		reset_work_tree_to add_sub1 &&
 		(
 			cd submodule_update &&
 			git branch -t invalid_sub1 origin/invalid_sub1 &&
-			$command invalid_sub1 &&
+			test_must_fail $command invalid_sub1 &&
 			test_superproject_content origin/invalid_sub1 &&
 			test_submodule_content sub1 origin/add_sub1
 		)
