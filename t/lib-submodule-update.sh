@@ -1106,7 +1106,7 @@ test_submodule_forced_recursive_switch () {
 	'
 	# ... but fails because it could destroy unpushed parts of submodule
 	# history if that still uses a .git directory.
-	test_expect_success "$command: replace submodule containing a .git directory with a file must fail" '
+	test_expect_failure "$command: replace submodule containing a .git directory with a file must fail" '
 		prolog &&
 		reset_work_tree_to add_sub1 &&
 		(
