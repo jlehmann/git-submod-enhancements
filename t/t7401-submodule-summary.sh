@@ -29,8 +29,10 @@ commit_file () {
 	git commit "$@" -m "Commit $*" >/dev/null
 }
 
-test_create_repo sm1 &&
-add_file . foo >/dev/null
+test_expect_success 'setup' '
+	test_create_repo sm1 &&
+	add_file . foo >/dev/null
+'
 
 head1=$(add_file sm1 foo1 foo2)
 
@@ -78,10 +80,10 @@ test_expect_success 'added submodule (subdirectory with explicit path)' "
   > Add foo2
 
 EOF
-	test_cmp expected actual
+	test_cmp expected actual &&
+	commit_file sm1
 "
 
-commit_file sm1 &&
 head2=$(add_file sm1 foo3)
 
 test_expect_success 'modified submodule(forward)' "
@@ -118,11 +120,11 @@ EOF
 	test_cmp expected actual &&
 	git config --unset diff.ignoreSubmodules &&
 	git config --remove-section submodule.sm1 &&
-	git config -f .gitmodules --remove-section submodule.sm1
+	git config -f .gitmodules --remove-section submodule.sm1 &&
+	commit_file sm1
 "
 
 
-commit_file sm1 &&
 head3=$(
 	cd sm1 &&
 	git reset --hard HEAD~2 >/dev/null &&
@@ -164,18 +166,18 @@ test_expect_success '--summary-limit' "
   < Add foo3
 
 EOF
-	test_cmp expected actual
+	test_cmp expected actual &&
+	commit_file sm1 &&
+	mv sm1 sm1-bak &&
+	echo sm1 >sm1
 "
 
-commit_file sm1 &&
-mv sm1 sm1-bak &&
-echo sm1 >sm1 &&
-head5=$(git hash-object sm1 | cut -c1-7) &&
-git add sm1 &&
-rm -f sm1 &&
-mv sm1-bak sm1
+head5=$(git hash-object sm1 | cut -c1-7)
 
 test_expect_success 'typechanged submodule(submodule->blob), --cached' "
+	git add sm1 &&
+	rm -f sm1 &&
+	mv sm1-bak sm1 &&
 	git submodule summary --cached >actual &&
 	cat >expected <<-EOF &&
 * sm1 $head4(submodule)->$head5(blob) (3):
@@ -195,19 +197,19 @@ EOF
 	test_i18ncmp actual expected
 "
 
-rm -rf sm1 &&
-git checkout-index sm1
 test_expect_success 'typechanged submodule(submodule->blob)' "
+	rm -rf sm1 &&
+	git checkout-index sm1 &&
 	git submodule summary >actual &&
 	cat >expected <<-EOF &&
 * sm1 $head4(submodule)->$head5(blob):
 
 EOF
-	test_i18ncmp actual expected
+	test_i18ncmp actual expected &&
+	rm -f sm1 &&
+	test_create_repo sm1
 "
 
-rm -f sm1 &&
-test_create_repo sm1 &&
 head6=$(add_file sm1 foo6 foo7)
 test_expect_success 'nonexistent commit' "
 	git submodule summary >actual &&
@@ -219,8 +221,8 @@ EOF
 	test_i18ncmp actual expected
 "
 
-commit_file
 test_expect_success 'typechanged submodule(blob->submodule)' "
+	commit_file &&
 	git submodule summary >actual &&
 	cat >expected <<-EOF &&
 * sm1 $head5(blob)->$head6(submodule) (2):
@@ -230,22 +232,22 @@ EOF
 	test_i18ncmp expected actual
 "
 
-commit_file sm1 &&
-rm -rf sm1
 test_expect_success 'deleted submodule' "
+	commit_file sm1 &&
+	rm -rf sm1 &&
 	git submodule summary >actual &&
 	cat >expected <<-EOF &&
 * sm1 $head6...0000000:
 
 EOF
-	test_cmp expected actual
+	test_cmp expected actual &&
+	test_create_repo sm2
 "
 
-test_create_repo sm2 &&
-head7=$(add_file sm2 foo8 foo9) &&
-git add sm2
+head7=$(add_file sm2 foo8 foo9)
 
 test_expect_success 'multiple submodules' "
+	git add sm2 &&
 	git submodule summary >actual &&
 	cat >expected <<-EOF &&
 * sm1 $head6...0000000:
@@ -267,8 +269,8 @@ EOF
 	test_cmp expected actual
 "
 
-commit_file sm2
 test_expect_success 'given commit' "
+	commit_file sm2 &&
 	git submodule summary HEAD^ >actual &&
 	cat >expected <<-EOF &&
 * sm1 $head6...0000000:
