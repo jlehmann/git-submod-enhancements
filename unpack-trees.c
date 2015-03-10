@@ -9,6 +9,7 @@
 #include "refs.h"
 #include "attr.h"
 #include "split-index.h"
+#include "submodule.h"
 
 /*
  * Error messages expected by scripts out of plumbing commands such as
@@ -1516,6 +1517,17 @@ static int merged_entry(const struct cache_entry *ce,
 			copy_cache_entry(merge, old);
 			update = 0;
 		} else {
+			/*
+			 * A submodule containing a .git directory must never
+			 * be replaced with a file.
+			 */
+			if (S_ISGITLINK(old->ce_mode) &&
+			    !is_empty_dir(old->name) &&
+			    !S_ISGITLINK(merge->ce_mode) &&
+			    !submodule_uses_gitfile(old->name)) {
+				free(merge);
+				return -1;
+			}
 			if (verify_uptodate(old, o)) {
 				free(merge);
 				return -1;
