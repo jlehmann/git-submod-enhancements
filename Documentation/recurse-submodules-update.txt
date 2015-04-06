@@ -1,0 +1,10 @@
+--no-recurse-submodules::
+--recurse-submodules::
+	Perform the checkout in submodules, too.  This only affects
+	submodules with update strategy `checkout` (which is the
+	default update strategy; see `submodule.<name>.update` in
+	linkgit:gitmodules[5]).
++
+The default behavior is to update submodule entries in the superproject
+index and to leave the inside of submodules alone.  That behavior can
+also be requested explicitly with `--no-recurse-submodules`.

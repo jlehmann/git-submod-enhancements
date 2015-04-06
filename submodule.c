@@ -12,10 +12,31 @@
 #include "argv-array.h"
 #include "blob.h"
 
+/*
+ * When no --recurse-submodules option was passed, should git fetch
+ * from submodules where submodule.<name>.fetchRecurseSubmodules doesn't
+ * indicate what to do?
+ *
+ * Controlled by fetch.recurseSubmodules.  The default is determined by
+ * the --recurse-submodules-default option, which propagates
+ * --recurse-submodules from the parent git process when recursing.
+ */
+static int config_fetch_recurse_submodules = RECURSE_SUBMODULES_ON_DEMAND;
+
+/*
+ * When no --recurse-submodules option was passed, should git update the
+ * index and worktree within submodules (and in turn their submodules,
+ * etc)?
+ *
+ * Controlled by the --recurse-submodules-default option, which propagates
+ * --recurse-submodules from the parent git process when recursing.
+ */
+static int config_update_recurse_submodules = RECURSE_SUBMODULES_OFF;
+
 static struct string_list config_name_for_path;
 static struct string_list config_fetch_recurse_submodules_for_name;
 static struct string_list config_ignore_for_name;
-static int config_fetch_recurse_submodules = RECURSE_SUBMODULES_ON_DEMAND;
+static int option_update_recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 static struct string_list changed_submodule_paths;
 static int initialized_fetch_ref_tips;
 static struct sha1_array ref_tips_before_fetch;
@@ -359,6 +380,45 @@ int parse_fetch_recurse_submodules_arg(const char *opt, const char *arg)
 	}
 }
 
+int parse_update_recurse_submodules_arg(const char *opt, const char *arg)
+{
+	switch (git_config_maybe_bool(opt, arg)) {
+	case 1:
+		return RECURSE_SUBMODULES_ON;
+	case 0:
+		return RECURSE_SUBMODULES_OFF;
+	default:
+		die("bad %s argument: %s", opt, arg);
+	}
+}
+
+int option_parse_update_submodules(const struct option *opt,
+				   const char *arg, int unset)
+{
+	if (unset) {
+		*(int *)opt->value = RECURSE_SUBMODULES_OFF;
+	} else if (arg) {
+		*(int *)opt->value = parse_update_recurse_submodules_arg(opt->long_name, arg);
+	} else {
+		*(int *)opt->value = RECURSE_SUBMODULES_ON;
+	}
+	return 0;
+}
+
+int submodule_needs_update(const char *path)
+{
+	struct string_list_item *path_option;
+	path_option = unsorted_string_list_lookup(&config_name_for_path, path);
+	if (!path_option)
+		return 0;
+
+	/* update can't be "none", "merge" or "rebase" */
+
+	if (option_update_recurse_submodules != RECURSE_SUBMODULES_DEFAULT)
+		return 1;
+	return config_update_recurse_submodules != RECURSE_SUBMODULES_OFF;
+}
+
 void show_submodule_summary(FILE *f, const char *path,
 		const char *line_prefix,
 		unsigned char one[20], unsigned char two[20],
@@ -559,6 +619,12 @@ int push_unpushed_submodules(unsigned char new_sha1[20], const char *remotes_nam
 	string_list_clear(&needs_pushing, 0);
 
 	return ret;
+}
+
+void set_config_update_recurse_submodules(int default_value, int option_value)
+{
+	config_update_recurse_submodules = default_value;
+	option_update_recurse_submodules = option_value;
 }
 
 static int is_submodule_commit_present(const char *path, unsigned char sha1[20])
