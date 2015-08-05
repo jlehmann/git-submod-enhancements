@@ -5,6 +5,8 @@
 #include "pathspec.h"
 #include "dir.h"
 #include "utf8.h"
+#include "submodule.h"
+#include "string-list.h"
 
 static char *ps_matched;
 static const struct cache_entry **ce_entries;
@@ -98,6 +100,24 @@ static int module_list(int argc, const char **argv, const char *prefix)
 	return 0;
 }
 
+static int module_name(int argc, const char **argv, const char *prefix)
+{
+	const char *name;
+
+	if (argc != 1)
+		usage("git submodule--helper module_name <path>\n");
+
+	gitmodules_config();
+	name = submodule_name_for_path(argv[0]);
+
+	if (name)
+		printf("%s\n", name);
+	else
+		die("No submodule mapping found in .gitmodules for path '%s'", argv[0]);
+
+	return 0;
+}
+
 int cmd_submodule__helper(int argc, const char **argv, const char *prefix)
 {
 	if (argc < 2)
@@ -105,6 +125,9 @@ int cmd_submodule__helper(int argc, const char **argv, const char *prefix)
 
 	if (!strcmp(argv[1], "module_list"))
 		return module_list(argc - 1, argv + 1, prefix);
+
+	if (!strcmp(argv[1], "module_name"))
+		return module_name(argc - 2, argv + 2, prefix);
 
 usage:
 	usage("git submodule--helper module_list\n");
