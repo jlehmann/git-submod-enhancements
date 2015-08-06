@@ -110,11 +110,10 @@ static int module_name(int argc, const char **argv, const char *prefix)
 	gitmodules_config();
 	name = submodule_name_for_path(argv[0]);
 
-	if (name)
-		printf("%s\n", name);
-	else
+	if (!name)
 		die("No submodule mapping found in .gitmodules for path '%s'", argv[0]);
 
+	printf("%s\n", name);
 	return 0;
 }
 

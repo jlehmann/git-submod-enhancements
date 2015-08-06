@@ -686,14 +686,14 @@ static void calculate_changed_submodule_paths(void)
 	initialized_fetch_ref_tips = 0;
 }
 
-const char* submodule_name_for_path(const char* path)
+const char *submodule_name_for_path(const char *path)
 {
 	struct string_list_item *item;
 	item = unsorted_string_list_lookup(&config_name_for_path, path);
-	if (item)
-		return item->util;
-	else
+	if (!item)
 		return NULL;
+
+	return item->util;
 }
 
 int fetch_populated_submodules(const struct argv_array *options,
@@ -703,7 +703,6 @@ int fetch_populated_submodules(const struct argv_array *options,
 	int i, result = 0;
 	struct child_process cp = CHILD_PROCESS_INIT;
 	struct argv_array argv = ARGV_ARRAY_INIT;
-	const char *name_for_path;
 	const char *work_tree = get_git_work_tree();
 	if (!work_tree)
 		goto out;
@@ -733,8 +732,10 @@ int fetch_populated_submodules(const struct argv_array *options,
 		if (!S_ISGITLINK(ce->ce_mode))
 			continue;
 
-		name_for_path = submodule_name_for_path(ce->name);
-		name =  name_for_path ? name_for_path : ce->name;
+		name = submodule_name_for_path(ce->name);
+		if (!name)
+			/* Not in .gitmodules, try the default name == path */
+			name = ce->name;
 
 		default_argv = "yes";
 		if (command_line_option == RECURSE_SUBMODULES_DEFAULT) {
