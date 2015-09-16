@@ -21,6 +21,8 @@
 #include "parse-options.h"
 #include "unpack-trees.h"
 #include "cache-tree.h"
+#include "submodule.h"
+#include "submodule-config.h"
 
 static const char * const git_reset_usage[] = {
 	N_("git reset [--mixed | --soft | --hard | --merge | --keep] [-q] [<commit>]"),
@@ -268,6 +270,8 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 {
 	int reset_type = NONE, update_ref_status = 0, quiet = 0;
 	int patch_mode = 0, unborn;
+	const char *recurse_submodules_default = "off";
+	int recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 	const char *rev;
 	unsigned char sha1[20];
 	struct pathspec pathspec;
@@ -286,13 +290,24 @@ int cmd_reset(int argc, const char **argv, const char *prefix)
 		OPT_BOOL('p', "patch", &patch_mode, N_("select hunks interactively")),
 		OPT_BOOL('N', "intent-to-add", &intent_to_add,
 				N_("record only the fact that removed paths will be added later")),
+		{ OPTION_CALLBACK, 0, "recurse-submodules", &recurse_submodules,
+			"checkout", "control recursive updating of submodules",
+			PARSE_OPT_OPTARG, option_parse_update_submodules },
+		{ OPTION_STRING, 0, "recurse-submodules-default",
+			&recurse_submodules_default, NULL,
+			"default mode for recursion", PARSE_OPT_HIDDEN },
 		OPT_END()
 	};
 
+	gitmodules_config();
 	git_config(git_default_config, NULL);
 
 	argc = parse_options(argc, argv, prefix, options, git_reset_usage,
 						PARSE_OPT_KEEP_DASHDASH);
+	set_config_update_recurse_submodules(
+		parse_update_recurse_submodules_arg("--recurse-submodules-default",
+						    recurse_submodules_default),
+		recurse_submodules);
 	parse_args(&pathspec, argv, prefix, patch_mode, &rev);
 
 	unborn = !strcmp(rev, "HEAD") && get_sha1("HEAD", sha1);
