@@ -204,6 +204,16 @@ void gitmodules_config(void)
 	if (work_tree) {
 		struct strbuf gitmodules_path = STRBUF_INIT;
 		int pos;
+		struct stat st;
+
+		if (stat(get_index_file(), &st) || !st.st_size)
+			/*
+			 * Index exists but is empty. This may happen just
+			 * before read-tree is called to rewrite it. Let's be
+			 * safe and assume the .gitmodules file is not valid.
+			 */
+			return;
+
 		strbuf_addstr(&gitmodules_path, work_tree);
 		strbuf_addstr(&gitmodules_path, "/.gitmodules");
 		if (read_cache() < 0)
