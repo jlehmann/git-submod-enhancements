@@ -16,7 +16,7 @@ SYNOPSIS
 	  [--ignore-space-change | --ignore-whitespace ]
 	  [--whitespace=(nowarn|warn|fix|error|error-all)]
 	  [--exclude=<path>] [--include=<path>] [--directory=<root>]
-	  [--verbose] [--unsafe-paths] [<patch>...]
+	  [--verbose] [--unsafe-paths] [--recurse-submodules] [<patch>...]
 
 DESCRIPTION
 -----------
@@ -238,6 +238,8 @@ running `git apply --directory=modules/git-gui`.
 When `git apply` is used as a "better GNU patch", the user can pass
 the `--unsafe-paths` option to override this safety check.  This option
 has no effect when `--index` or `--cached` is in use.
+
+include::recurse-submodules-update.txt[]
 
 Configuration
 -------------
