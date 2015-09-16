@@ -367,6 +367,41 @@ int submodule_needs_update(const char *path, const unsigned char sha1[20])
 	return config_update_recurse_submodules == RECURSE_SUBMODULES_ON;
 }
 
+int populate_submodule(const char *path, unsigned char sha1[20], int force)
+{
+	const char *name, *real_git_dir;
+	struct strbuf buf = STRBUF_INIT;
+	struct child_process cp;
+	const char *argv[] = {"read-tree", force ? "--reset" : "-m", "-u", NULL, NULL};
+	const struct submodule *submodule;
+	submodule = submodule_from_path(null_sha1, path);
+	if (!submodule)
+		return 0;
+
+	name = submodule->name;
+
+	strbuf_addf(&buf, "%s/modules/%s", resolve_gitdir(get_git_dir()), name);
+	real_git_dir = resolve_gitdir(buf.buf);
+	if (!real_git_dir)
+		goto out;
+	connect_work_tree_and_git_dir(path, real_git_dir);
+
+	/* Run read-tree --reset sha1 */
+	memset(&cp, 0, sizeof(cp));
+	cp.argv = argv;
+	cp.env = local_repo_env;
+	cp.git_cmd = 1;
+	cp.no_stdin = 1;
+	cp.dir = path;
+	argv[3] = sha1_to_hex(sha1);
+	if (run_command(&cp))
+		warning(_("Checking out submodule %s failed"), path);
+
+out:
+	strbuf_release(&buf);
+	return 0;
+}
+
 int depopulate_submodule(const char *path)
 {
 	struct strbuf dot_git = STRBUF_INIT;
@@ -1151,6 +1186,7 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 {
 	struct strbuf file_name = STRBUF_INIT;
 	struct strbuf rel_path = STRBUF_INIT;
+	const char *real_git_dir = xstrdup(real_path(git_dir));
 	const char *real_work_tree = xstrdup(real_path(work_tree));
 
 	/* Update gitfile */
@@ -1160,9 +1196,9 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 
 	/* Update core.worktree setting */
 	strbuf_reset(&file_name);
-	strbuf_addf(&file_name, "%s/config", git_dir);
+	strbuf_addf(&file_name, "%s/config", real_git_dir);
 	if (git_config_set_in_file(file_name.buf, "core.worktree",
-				   relative_path(real_work_tree, git_dir,
+				   relative_path(real_work_tree, real_git_dir,
 						 &rel_path)))
 		die(_("Could not set core.worktree in %s"),
 		    file_name.buf);
@@ -1170,4 +1206,5 @@ void connect_work_tree_and_git_dir(const char *work_tree, const char *git_dir)
 	strbuf_release(&file_name);
 	strbuf_release(&rel_path);
 	free((void *)real_work_tree);
+	free((void *)real_git_dir);
 }

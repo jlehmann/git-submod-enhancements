@@ -1386,6 +1386,7 @@ static int check_ok_to_remove(const char *name, int len, int dtype,
 			      struct unpack_trees_options *o)
 {
 	const struct cache_entry *result;
+	char *name_copy, *separator;
 
 	/*
 	 * It may be that the 'lstat()' succeeded even though
@@ -1427,6 +1428,43 @@ static int check_ok_to_remove(const char *name, int len, int dtype,
 		if (result->ce_flags & CE_REMOVE)
 			return 0;
 	}
+
+	/*
+	 * If the path lies inside a to be removed submodule it is ok to
+	 * replace it.
+	 */
+	name_copy = xstrdup(name);
+	while ((separator = strrchr(name_copy, '/'))) {
+		int i;
+		*separator = '\0';
+		for (i = 0; i < the_index.cache_nr; i++) {
+			struct cache_entry *ce = the_index.cache[i];
+			if (!strcmp(ce->name, name_copy) &&
+			    S_ISGITLINK(ce->ce_mode)) {
+				if (submodule_needs_update(ce->name, null_sha1) &&
+				    submodule_uses_gitfile(ce->name)) {
+					/*
+					 * Submodule will be removed from
+					 * work tree, all files in it will be
+					 * gone.
+					 */
+					free(name_copy);
+					return 0;
+				} else {
+					/*
+					 * Files in a submodule that will not
+					 * be removed must not be presumed
+					 * absent, as everything inside the
+					 * submodule isn't under control of
+					 * this repo.
+					 */
+					name_copy[0] = '\0';
+					break;
+				}
+			}
+		}
+	}
+	free(name_copy);
 
 	return o->gently ? -1 :
 		add_rejected_path(o, error_type, name);
