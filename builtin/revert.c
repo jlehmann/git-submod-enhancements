@@ -6,6 +6,8 @@
 #include "rerere.h"
 #include "dir.h"
 #include "sequencer.h"
+#include "submodule.h"
+#include "submodule-config.h"
 
 /*
  * This implements the builtins revert and cherry-pick.
@@ -17,6 +19,9 @@
  * Copyright (c) 2005 Linus Torvalds
  * Copyright (c) 2005 Junio C Hamano
  */
+
+static const char *recurse_submodules_default = "off";
+static int recurse_submodules = RECURSE_SUBMODULES_DEFAULT;
 
 static const char * const revert_usage[] = {
 	N_("git revert [<options>] <commit-ish>..."),
@@ -91,6 +96,12 @@ static void parse_args(int argc, const char **argv, struct replay_opts *opts)
 			N_("option for merge strategy"), option_parse_x),
 		{ OPTION_STRING, 'S', "gpg-sign", &opts->gpg_sign, N_("key-id"),
 		  N_("GPG sign commit"), PARSE_OPT_OPTARG, NULL, (intptr_t) "" },
+		{ OPTION_CALLBACK, 0, "recurse-submodules", &recurse_submodules,
+		  "checkout", "control recursive updating of submodules",
+		  PARSE_OPT_OPTARG, option_parse_update_submodules },
+		{ OPTION_STRING, 0, "recurse-submodules-default",
+		  &recurse_submodules_default, NULL,
+		  "default mode for recursion", PARSE_OPT_HIDDEN },
 		OPT_END(),
 		OPT_END(),
 		OPT_END(),
@@ -115,6 +126,11 @@ static void parse_args(int argc, const char **argv, struct replay_opts *opts)
 	argc = parse_options(argc, argv, NULL, options, usage_str,
 			PARSE_OPT_KEEP_ARGV0 |
 			PARSE_OPT_KEEP_UNKNOWN);
+
+	set_config_update_recurse_submodules(
+		parse_update_recurse_submodules_arg("--recurse-submodules-default",
+						    recurse_submodules_default),
+		recurse_submodules);
 
 	/* implies allow_empty */
 	if (opts->keep_redundant_commits)
@@ -190,6 +206,7 @@ int cmd_revert(int argc, const char **argv, const char *prefix)
 	if (isatty(0))
 		opts.edit = 1;
 	opts.action = REPLAY_REVERT;
+	gitmodules_config();
 	git_config(git_default_config, NULL);
 	parse_args(argc, argv, &opts);
 	res = sequencer_pick_revisions(&opts);
@@ -205,6 +222,7 @@ int cmd_cherry_pick(int argc, const char **argv, const char *prefix)
 
 	memset(&opts, 0, sizeof(opts));
 	opts.action = REPLAY_PICK;
+	gitmodules_config();
 	git_config(git_default_config, NULL);
 	parse_args(argc, argv, &opts);
 	res = sequencer_pick_revisions(&opts);
