@@ -11,7 +11,8 @@ SYNOPSIS
 [verse]
 'git merge' [-n] [--stat] [--no-commit] [--squash] [--[no-]edit]
 	[-s <strategy>] [-X <strategy-option>] [-S[<keyid>]]
-	[--[no-]rerere-autoupdate] [-m <msg>] [<commit>...]
+	[--[no-]rerere-autoupdate] [--recurse-submodules]
+	[-m <msg>] [<commit>...]
 'git merge' <msg> HEAD <commit>...
 'git merge' --abort
 
@@ -97,6 +98,8 @@ commit or stash your changes before running 'git merge'.
 +
 'git merge --abort' is equivalent to 'git reset --merge' when
 `MERGE_HEAD` is present.
+
+include::recurse-submodules-update.txt[]
 
 <commit>...::
 	Commits, usually other branch heads, to merge into our branch.
