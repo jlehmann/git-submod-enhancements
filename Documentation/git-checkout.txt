@@ -8,12 +8,12 @@ git-checkout - Switch branches or restore working tree files
 SYNOPSIS
 --------
 [verse]
-'git checkout' [-q] [-f] [-m] [<branch>]
-'git checkout' [-q] [-f] [-m] --detach [<branch>]
-'git checkout' [-q] [-f] [-m] [--detach] <commit>
-'git checkout' [-q] [-f] [-m] [[-b|-B|--orphan] <new_branch>] [<start_point>]
-'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] [<tree-ish>] [--] <paths>...
-'git checkout' [-p|--patch] [<tree-ish>] [--] [<paths>...]
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] [<branch>]
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] --detach [<branch>]
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] [--detach] <commit>
+'git checkout' [-q] [-f] [-m] [--[no-]recurse-submodules] [[-b|-B|--orphan] <new_branch>] [<start_point>]
+'git checkout' [-f|--ours|--theirs|-m|--conflict=<style>] [--[no-]recurse-submodules] [<tree-ish>] [--] <paths>...
+'git checkout' [-p|--patch] [--[no-]recurse-submodules] [<tree-ish>] [--] [<paths>...]
 
 DESCRIPTION
 -----------
@@ -255,6 +255,8 @@ section of linkgit:git-add[1] to learn how to operate the `--patch` mode.
 	out by another worktree. This option makes it check the ref
 	out anyway. In other words, the ref can be held by more than one
 	worktree.
+
+include::recurse-submodules-update.txt[]
 
 <branch>::
 	Branch to checkout; if it refers to a branch (i.e., a name that,
