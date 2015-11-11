@@ -17,7 +17,8 @@ The command takes various subcommands, and different options depending
 on the subcommand:
 
  git bisect start [--term-{old,good}=<term> --term-{new,bad}=<term>]
-		  [--no-checkout] [<bad> [<good>...]] [--] [<paths>...]
+		  [--no-checkout] [--[no-]recurse-submodules]
+		  [<bad> [<good>...]] [--] [<paths>...]
  git bisect (bad|new) [<rev>]
  git bisect (good|old) [<rev>...]
  git bisect terms [--term-good | --term-bad]
@@ -365,6 +366,12 @@ This option may be useful when the test you would perform in each step
 does not require a checked out tree.
 +
 If the repository is bare, `--no-checkout` is assumed.
+
+include::recurse-submodules-update.txt[]
++
+When this option is given to "git bisect start" it will be passed to
+linkgit:git-checkout[1] at each iteration of the bisection process. It is
+ignored when used together with `--no-checkout`.
 
 EXAMPLES
 --------
